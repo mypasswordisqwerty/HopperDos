@@ -27,6 +27,11 @@
             return nil;
         }
         cs_option(_handle, CS_OPT_DETAIL, CS_OPT_ON);
+        if (file.userRequestedSyntaxIndex){
+            cs_option(_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+        }else{
+            cs_option(_handle, CS_OPT_DETAIL, CS_OPT_SYNTAX_INTEL);
+        }
     }
     return self;
 }
@@ -46,7 +51,6 @@
 // Analysis
 
 - (Address)adjustCodeAddress:(Address)address {
-    // Instructions are always aligned to a multiple of 2.
     return address;
 }
 
@@ -168,10 +172,27 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
     disasm->instruction.addressValue = 0;
     disasm->instruction.pcRegisterValue = disasm->virtualAddr + insn->size;
 
+    char* oppos = insn->op_str;
+    char* cpos = strchr(oppos, ',');
+    if (!cpos){
+        cpos=oppos + strlen(oppos);
+    }
+
     int op_index;
     for (op_index=0; op_index<insn->detail->x86.op_count; op_index++) {
         cs_x86_op *op = insn->detail->x86.operands + op_index;
         DisasmOperand *hop_op = disasm->operand + op_index;
+
+        strncpy(hop_op->userString, oppos, cpos - oppos);
+        hop_op->userString[cpos - oppos] = 0;
+        if (*cpos != 0 && cpos[1]!=0){
+            oppos = cpos+1;
+            while(*oppos!=0 && *oppos == ' ') oppos++;
+            cpos = strchr(oppos, ',');
+            if (!cpos){
+                cpos = oppos + strlen(oppos);
+            }
+        }
 
         switch (op->type) {
             case X86_OP_IMM:
@@ -251,11 +272,11 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
                 disasm->operand[lastOperandIndex].immediateValue = disasm->instruction.addressValue;
         }
 
+        if(cs_insn_group(_handle, insn, X86_GRP_CALL)){
+            disasm->instruction.branchType = DISASM_BRANCH_CALL;
+        }
+
         switch(insn->id) {
-            case X86_INS_CALL:
-            case X86_INS_LCALL:
-                disasm->instruction.branchType = DISASM_BRANCH_CALL;
-                break;
             case X86_INS_JGE:
             case X86_INS_JAE:
                 disasm->instruction.branchType = DISASM_BRANCH_JGE;
@@ -385,6 +406,7 @@ static inline int firstBitIndex(uint64_t mask) {
 
     NSObject<HPASMLine> *line = [services blankASMLine];
 
+
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {
         if (disasm->instruction.branchType) {
             if (format == Format_Default) format = Format_Address;
@@ -404,7 +426,10 @@ static inline int firstBitIndex(uint64_t mask) {
                                               andSyntaxIndex:file.userRequestedSyntaxIndex]
                          ofClass:regCls
                         andIndex:regIdx];
+    }else{
+        [line appendString:[NSString stringWithCString:operand->userString encoding:NSASCIIStringEncoding]];
     }
+    /*TODO: color that
     else if (operand->type & DISASM_OPERAND_MEMORY_TYPE) {
         [line appendRawString:@"["];
 
@@ -434,6 +459,7 @@ static inline int firstBitIndex(uint64_t mask) {
                 }
             }
             if (operand->memory.displacement){
+                [line appendRawString:@"+"];
                 format = (ArgFormat) (Format_Decimal | Format_Signed);
                 [line append:[file formatNumber:operand->memory.displacement at:disasm->virtualAddr usingFormat:format andBitSize:16]];
 
@@ -444,6 +470,7 @@ static inline int firstBitIndex(uint64_t mask) {
         }
         [line appendRawString:@"]"];
     }
+     */
 
     [line setIsOperand:operandIndex startingAtIndex:0];
 

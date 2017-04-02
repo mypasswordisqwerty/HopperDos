@@ -85,11 +85,11 @@
 }
 
 - (NSUInteger)syntaxVariantCount {
-    return 1;
+    return 2;
 }
 
 - (NSArray<NSString *> *)syntaxVariantNames {
-    return @[@"intel"];
+    return @[@"intel", @"AT&T"];
 }
 
 - (NSString *)framePointerRegisterNameForFile:(NSObject<HPDisassembledFile> *)file {
@@ -126,6 +126,7 @@
     static NSString *GNames[] = {@"ah", @"al", @"ax", @"bh", @"bl",@"bx",
         @"ch", @"cl", @"cx", @"dh", @"dl", @"dx", @"bp", @"sp", @"si", @"di", @"ip"};
     static NSString *SNames[] = {@"cs", @"ds", @"es", @"ss"};
+
     switch (reg_class) {
         case RegClass_CPUState: return @"flags";
         case RegClass_GeneralPurposeRegister: return GNames[reg];
@@ -137,7 +138,8 @@
 
 - (NSString *)registerIndexToString:(NSUInteger)reg ofClass:(RegClass)reg_class withBitSize:(NSUInteger)size position:(DisasmPosition)position andSyntaxIndex:(NSUInteger)syntaxIndex {
     NSString *regName = [self lowercaseStringForRegister:reg ofClass:reg_class];
-    if (syntaxIndex == 1) regName = [regName uppercaseString];
+    if (syntaxIndex == 1)
+        regName = [NSString stringWithFormat:@"%%%@", regName];
     return regName;
 }
 

@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:DOSExeLoader/DOSExeLoader.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:Intel16CPU/Intel16CPU.xcodeproj">
    </FileRef>
    <FileRef

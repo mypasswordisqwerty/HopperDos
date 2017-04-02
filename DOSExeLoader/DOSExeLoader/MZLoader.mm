@@ -7,6 +7,7 @@
 //
 
 #import "MZLoader.h"
+#include "mz.h"
 
 @implementation MZLoader{
     NSObject<HPHopperServices> *_services;
@@ -57,8 +58,14 @@
 
 // Returns an array of DetectedFileType objects.
 - (NSArray *)detectedTypesForData:(NSData *)data {
-    //if ([data length] < 2)
+    if ([data length] < 0x1c)
         return @[];
+
+    const void *bytes = (const void *)[data bytes];
+    MZHeader *mz=(MZHeader*)bytes;
+    if (mz->signature!=MZ_MAGIC){
+        return @[];
+    }
 
     NSObject<HPDetectedFileType> *type = [_services detectedType];
     [type setFileDescription:@"DOS MZ Executable"];
@@ -83,27 +90,39 @@
 
 
 - (FileLoaderLoadingStatus)loadData:(NSData *)data usingDetectedFileType:(NSObject<HPDetectedFileType> *)fileType options:(FileLoaderOptions)options forFile:(NSObject<HPDisassembledFile> *)file usingCallback:(FileLoadingCallbackInfo)callback {
-    NSObject<HPSegment> *segment = [file addSegmentAt:0x100 size:[data length]];
-    NSObject<HPSection> *section = [segment addSectionAt:0x100 size:[data length]];
+
+    const unsigned char *bytes = (const unsigned char *)[data bytes];
+    MZHeader* mz = (MZHeader*)bytes;
+    //MZReloc *reloc = (MZReloc*)bytes+sizeof(MZHeader);
+    int codeofs = mz->header_paragraphs*16;
+    size_t exesz = mz->blocks_in_file * MZ_BLOCK;
+    if (mz->bytes_in_last_block){
+        exesz -= MZ_BLOCK - mz->bytes_in_last_block;
+    }
+    size_t codesz = exesz - codeofs;
+
+    NSObject<HPSegment> *segment = [file addSegmentAt:0 size:codesz];
+    NSObject<HPSection> *section = [segment addSectionAt:0 size:codesz];
 
     segment.segmentName = @"CODE";
     section.sectionName = @"code";
-    section.pureCodeSection = NO;
-    NSString *comment = [NSString stringWithFormat:@"\n\nDOS COM %@\n\n", segment.segmentName];
-    [file setComment:comment atVirtualAddress:0x100 reason:CCReason_Automatic];
+    section.containsCode = YES;
+    NSString *comment = [NSString stringWithFormat:@"\n\nDOS EXE SEGMENT %@\n\n", segment.segmentName];
+    [file setComment:comment atVirtualAddress:0 reason:CCReason_Automatic];
 
-    segment.mappedData = data;
-    segment.fileOffset = 0;
-    segment.fileLength = [data length];
-    section.fileOffset = 0;
-    section.fileLength = [data length];
+    segment.mappedData = [NSData dataWithBytes:bytes + codeofs length:codesz];
+    segment.fileOffset = codeofs;
+    segment.fileLength = codesz;
+    section.fileOffset = codeofs;
+    section.fileLength = codesz;
 
 
     file.cpuFamily = @"intel16";
     file.cpuSubFamily = @"8086";
     [file setAddressSpaceWidthInBits:16];
 
-    [file addEntryPoint:0x100];
+    NSLog(@"Entry point at 0x%4.4X:0x%4.4X", mz->cs, mz->ip);
+    [file addEntryPoint: mz->cs * 0x10 + mz->ip];
 
     return DIS_OK;
 }

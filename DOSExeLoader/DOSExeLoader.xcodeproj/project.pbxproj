@@ -7,14 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		52C64DE81E90F2F200E2E1AD /* MZLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 52C64DE71E90F2F200E2E1AD /* MZLoader.m */; };
+		52C64DE81E90F2F200E2E1AD /* MZLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = 52C64DE71E90F2F200E2E1AD /* MZLoader.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		52C64DDD1E90F2CA00E2E1AD /* DOSExeLoader.hopperLoader */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DOSExeLoader.hopperLoader; sourceTree = BUILT_PRODUCTS_DIR; };
 		52C64DE01E90F2CA00E2E1AD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		52C64DE61E90F2F200E2E1AD /* MZLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MZLoader.h; sourceTree = "<group>"; };
-		52C64DE71E90F2F200E2E1AD /* MZLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MZLoader.m; sourceTree = "<group>"; };
+		52C64DE71E90F2F200E2E1AD /* MZLoader.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MZLoader.mm; sourceTree = "<group>"; };
+		52C64DE91E91141000E2E1AD /* mz.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mz.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,7 +50,8 @@
 			children = (
 				52C64DE01E90F2CA00E2E1AD /* Info.plist */,
 				52C64DE61E90F2F200E2E1AD /* MZLoader.h */,
-				52C64DE71E90F2F200E2E1AD /* MZLoader.m */,
+				52C64DE71E90F2F200E2E1AD /* MZLoader.mm */,
+				52C64DE91E91141000E2E1AD /* mz.h */,
 			);
 			path = DOSExeLoader;
 			sourceTree = "<group>";
@@ -121,7 +123,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				52C64DE81E90F2F200E2E1AD /* MZLoader.m in Sources */,
+				52C64DE81E90F2F200E2E1AD /* MZLoader.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,296 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		523E54BB1E904344007D2654 /* Intel16CPU.m in Sources */ = {isa = PBXBuildFile; fileRef = 523E54BA1E904344007D2654 /* Intel16CPU.m */; };
+		523E54BE1E9044A6007D2654 /* Intel16Ctx.m in Sources */ = {isa = PBXBuildFile; fileRef = 523E54BD1E9044A6007D2654 /* Intel16Ctx.m */; };
+		523E54C11E9044DD007D2654 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 523E54C01E9044DD007D2654 /* CoreFoundation.framework */; };
+		52EDA45F1E9072180088D4FA /* libcapstone.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 52EDA45E1E9072180088D4FA /* libcapstone.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		523E54B01E90431E007D2654 /* Intel16CPU.hopperCPU */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Intel16CPU.hopperCPU; sourceTree = BUILT_PRODUCTS_DIR; };
+		523E54B31E90431E007D2654 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		523E54B91E904344007D2654 /* Intel16CPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Intel16CPU.h; sourceTree = "<group>"; };
+		523E54BA1E904344007D2654 /* Intel16CPU.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Intel16CPU.m; sourceTree = "<group>"; };
+		523E54BC1E9044A6007D2654 /* Intel16Ctx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Intel16Ctx.h; sourceTree = "<group>"; };
+		523E54BD1E9044A6007D2654 /* Intel16Ctx.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Intel16Ctx.m; sourceTree = "<group>"; };
+		523E54C01E9044DD007D2654 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		52EDA45E1E9072180088D4FA /* libcapstone.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcapstone.a; path = ../../lib/libcapstone.a; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		523E54AD1E90431E007D2654 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52EDA45F1E9072180088D4FA /* libcapstone.a in Frameworks */,
+				523E54C11E9044DD007D2654 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		523E54A71E90431E007D2654 = {
+			isa = PBXGroup;
+			children = (
+				523E54B21E90431E007D2654 /* Intel16CPU */,
+				523E54B11E90431E007D2654 /* Products */,
+				523E54BF1E9044DD007D2654 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		523E54B11E90431E007D2654 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				523E54B01E90431E007D2654 /* Intel16CPU.hopperCPU */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		523E54B21E90431E007D2654 /* Intel16CPU */ = {
+			isa = PBXGroup;
+			children = (
+				523E54B31E90431E007D2654 /* Info.plist */,
+				523E54B91E904344007D2654 /* Intel16CPU.h */,
+				523E54BA1E904344007D2654 /* Intel16CPU.m */,
+				523E54BC1E9044A6007D2654 /* Intel16Ctx.h */,
+				523E54BD1E9044A6007D2654 /* Intel16Ctx.m */,
+			);
+			path = Intel16CPU;
+			sourceTree = "<group>";
+		};
+		523E54BF1E9044DD007D2654 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				52EDA45E1E9072180088D4FA /* libcapstone.a */,
+				523E54C01E9044DD007D2654 /* CoreFoundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		523E54AF1E90431E007D2654 /* Intel16CPU */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 523E54B61E90431E007D2654 /* Build configuration list for PBXNativeTarget "Intel16CPU" */;
+			buildPhases = (
+				523E54AC1E90431E007D2654 /* Sources */,
+				523E54AD1E90431E007D2654 /* Frameworks */,
+				523E54AE1E90431E007D2654 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Intel16CPU;
+			productName = Intel16CPU;
+			productReference = 523E54B01E90431E007D2654 /* Intel16CPU.hopperCPU */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		523E54A81E90431E007D2654 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = bjfn;
+				TargetAttributes = {
+					523E54AF1E90431E007D2654 = {
+						CreatedOnToolsVersion = 8.3;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 523E54AB1E90431E007D2654 /* Build configuration list for PBXProject "Intel16CPU" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 523E54A71E90431E007D2654;
+			productRefGroup = 523E54B11E90431E007D2654 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				523E54AF1E90431E007D2654 /* Intel16CPU */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		523E54AE1E90431E007D2654 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		523E54AC1E90431E007D2654 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				523E54BB1E904344007D2654 /* Intel16CPU.m in Sources */,
+				523E54BE1E9044A6007D2654 /* Intel16Ctx.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		523E54B41E90431E007D2654 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/../../lib";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../include";
+			};
+			name = Debug;
+		};
+		523E54B51E90431E007D2654 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/../../lib";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../include";
+			};
+			name = Release;
+		};
+		523E54B71E90431E007D2654 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Intel16CPU/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bjfn.Intel16CPU;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = hopperCPU;
+			};
+			name = Debug;
+		};
+		523E54B81E90431E007D2654 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Intel16CPU/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bjfn.Intel16CPU;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = hopperCPU;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		523E54AB1E90431E007D2654 /* Build configuration list for PBXProject "Intel16CPU" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				523E54B41E90431E007D2654 /* Debug */,
+				523E54B51E90431E007D2654 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		523E54B61E90431E007D2654 /* Build configuration list for PBXNativeTarget "Intel16CPU" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				523E54B71E90431E007D2654 /* Debug */,
+				523E54B81E90431E007D2654 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 523E54A81E90431E007D2654 /* Project object */;
+}

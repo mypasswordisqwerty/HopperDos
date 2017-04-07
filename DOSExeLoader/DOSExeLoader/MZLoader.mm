@@ -8,6 +8,8 @@
 
 #import "MZLoader.h"
 #include "mz.h"
+#include <set>
+using namespace std;
 
 @implementation MZLoader{
     NSObject<HPHopperServices> *_services;
@@ -93,28 +95,67 @@
 
     const unsigned char *bytes = (const unsigned char *)[data bytes];
     MZHeader* mz = (MZHeader*)bytes;
-    //MZReloc *reloc = (MZReloc*)bytes+sizeof(MZHeader);
-    int codeofs = mz->header_paragraphs*16;
-    size_t exesz = mz->blocks_in_file * MZ_BLOCK;
+    uint codeofs = mz->header_paragraphs * MZ_PARA;
+    uint exesz = mz->blocks_in_file * MZ_BLOCK;
     if (mz->bytes_in_last_block){
         exesz -= MZ_BLOCK - mz->bytes_in_last_block;
     }
-    size_t codesz = exesz - codeofs;
+    uint codesz = exesz - codeofs;
+
+    set<ushort> segs;
+    segs.insert(0);
+
+    MZReloc *reloc = (MZReloc*)(bytes + mz->reloc_table_offset);
+    for (int i=0; i<mz->num_relocs; i++){
+        segs.insert(reloc->segment);
+        ushort* rval = (ushort*)(bytes + codeofs + (reloc->segment << 4) + reloc->offset);
+        segs.insert(*rval);
+        reloc++;
+    }
 
     NSObject<HPSegment> *segment = [file addSegmentAt:0 size:codesz];
-    NSObject<HPSection> *section = [segment addSectionAt:0 size:codesz];
-
-    segment.segmentName = @"CODE";
-    section.sectionName = @"code";
-    section.containsCode = YES;
-    NSString *comment = [NSString stringWithFormat:@"\n\nDOS EXE SEGMENT %@\n\n", segment.segmentName];
-    [file setComment:comment atVirtualAddress:0 reason:CCReason_Automatic];
-
-    segment.mappedData = [NSData dataWithBytes:bytes + codeofs length:codesz];
+    segment.segmentName = @"DOS EXE";
+    segment.mappedData = [NSData dataWithBytes:bytes+codeofs length:codesz];
     segment.fileOffset = codeofs;
     segment.fileLength = codesz;
-    section.fileOffset = codeofs;
-    section.fileLength = codesz;
+
+    uint max = (*segs.rbegin()) << 4;
+    for (auto it=segs.begin(); it!=segs.end(); ++it){
+        set<ushort>::iterator prev;
+        if (it == segs.begin()){
+            prev = it;
+            continue;
+        }
+
+        uint32 end = 0;
+        do{
+            uint start = *prev << 4;
+            end = start==max ? codesz : *it << 4;
+            size_t sz = end - start;
+            NSLog(@"found segment %08X-%08X", start, end);
+
+            NSObject<HPSection> *section = [segment addSectionAt:start size:sz];
+
+            if (start!=max){
+                section.sectionName = [NSString stringWithFormat:@"%04X:0000_CODE", *prev];
+                section.containsCode = YES;
+                NSString *comment = [NSString stringWithFormat:@"\n%@ SEGMENT\n", section.sectionName];
+                [file setComment:comment atVirtualAddress:start reason:CCReason_Automatic];
+            }else{
+                section.sectionName = [NSString stringWithFormat:@"%04X:0000_DATA", *prev];
+                section.pureDataSection = YES;
+                NSString *comment = [NSString stringWithFormat:@"\n%@ SEGMENT\n", section.sectionName];
+                [file setComment:comment atVirtualAddress:start reason:CCReason_Automatic];
+
+            }
+            section.fileOffset = codeofs + start;
+            section.fileLength = sz;
+
+            prev=it;
+
+            NSLog(@"end max %08X %08X %d", end, max, end==max);
+        }while(end == max);
+    }
 
 
     file.cpuFamily = @"intel16";
@@ -122,7 +163,7 @@
     [file setAddressSpaceWidthInBits:16];
 
     NSLog(@"Entry point at 0x%4.4X:0x%4.4X", mz->cs, mz->ip);
-    [file addEntryPoint: mz->cs * 0x10 + mz->ip];
+    [file addEntryPoint: mz->cs * MZ_PARA + mz->ip];
 
     return DIS_OK;
 }

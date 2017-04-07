@@ -12,6 +12,7 @@
 #import <Hopper/CPUDefinition.h>
 #import <Hopper/HPDisassembledFile.h>
 #import <capstone/capstone.h>
+#include <stdlib.h>
 
 @implementation Intel16Ctx {
     Intel16CPU *_cpu;
@@ -27,7 +28,7 @@
             return nil;
         }
         cs_option(_handle, CS_OPT_DETAIL, CS_OPT_ON);
-        if (file.userRequestedSyntaxIndex){
+        if (file.userRequestedSyntaxIndex & 1){
             cs_option(_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
         }else{
             cs_option(_handle, CS_OPT_DETAIL, CS_OPT_SYNTAX_INTEL);
@@ -51,6 +52,7 @@
 // Analysis
 
 - (Address)adjustCodeAddress:(Address)address {
+    NSLog(@"adjust address");
     return address;
 }
 
@@ -242,7 +244,6 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
     for ( ; op_index < DISASM_MAX_OPERANDS; op_index++) {
         disasm->operand[op_index].type = DISASM_OPERAND_NO_OPERAND;
     }
-
     strcpy(disasm->instruction.mnemonic, insn->mnemonic);
 
     // In this early version, only branch instructions are analyzed in order to correctly
@@ -378,20 +379,17 @@ static inline int regIndexFromType(uint64_t type) {
 
 - (NSObject<HPASMLine> *)buildMnemonicString:(DisasmStruct *)disasm inFile:(NSObject<HPDisassembledFile> *)file {
     NSObject<HPHopperServices> *services = _cpu.hopperServices;
+
     NSObject<HPASMLine> *line = [services blankASMLine];
+    if ((file.userRequestedSyntaxIndex & 2) != 0){
+        Address va = disasm->virtualAddr;
+        Address start=[file sectionForVirtualAddress:va].startAddress;
+        [line appendString:[NSString stringWithFormat:@"%04X:%04X    ",(uint)start >> 4, (uint)(va-start)]];
+    }
+
     NSString *mnemonic = @(disasm->instruction.mnemonic);
-    if (file.userRequestedSyntaxIndex) mnemonic = [mnemonic uppercaseString];
     [line appendMnemonic:mnemonic];
     return line;
-}
-
-static inline int firstBitIndex(uint64_t mask) {
-    for (int i=0, j=1; i<64; i++, j<<=1) {
-        if (mask & j) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 - (NSObject<HPASMLine> *)buildOperandString:(DisasmStruct *)disasm forOperandIndex:(NSUInteger)operandIndex inFile:(NSObject<HPDisassembledFile> *)file raw:(BOOL)raw {
@@ -405,6 +403,7 @@ static inline int firstBitIndex(uint64_t mask) {
     NSObject<HPHopperServices> *services = _cpu.hopperServices;
 
     NSObject<HPASMLine> *line = [services blankASMLine];
+
 
 
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {

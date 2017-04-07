@@ -85,11 +85,11 @@
 }
 
 - (NSUInteger)syntaxVariantCount {
-    return 2;
+    return 4;
 }
 
 - (NSArray<NSString *> *)syntaxVariantNames {
-    return @[@"intel", @"AT&T"];
+    return @[@"intel", @"AT&T", @"intel s:o", @"AT&T s:o"];
 }
 
 - (NSString *)framePointerRegisterNameForFile:(NSObject<HPDisassembledFile> *)file {
@@ -156,7 +156,7 @@
     [nopArray setLength:size];
     uint16_t *ptr = (uint16_t *)[nopArray mutableBytes];
     for (NSUInteger i=0; i<size; i+=1) {
-        *ptr=0x90;
+        *ptr++ = 0x90;
     }
     return [NSData dataWithData:nopArray];
 }

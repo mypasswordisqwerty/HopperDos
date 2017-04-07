@@ -5,9 +5,9 @@
       location = "group:DOSExeLoader/DOSExeLoader.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Intel16CPU/Intel16CPU.xcodeproj">
+      location = "group:DOSComLoader/DOSComLoader.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:DOSComLoader/DOSComLoader.xcodeproj">
+      location = "group:Intel16CPU/Intel16CPU.xcodeproj">
    </FileRef>
 </Workspace>

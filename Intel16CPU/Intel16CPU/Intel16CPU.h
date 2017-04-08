@@ -10,7 +10,7 @@
 #import <Hopper/Hopper.h>
 
 typedef NS_ENUM(NSUInteger, GRegs) {
-    AH, AL, AX, BH, BL, BX, CH, CL, CX, DH, DL, DX, BP, SP, SI, DI, IP,
+    AH, AL, BH, BL, CH, CL, DH, DL, AX, BX, CX, DX, BP, SP, SI, DI, IP,
 };
 
 typedef NS_ENUM(NSUInteger, SRegs) {

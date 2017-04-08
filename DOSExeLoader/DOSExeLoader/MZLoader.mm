@@ -138,6 +138,7 @@ using namespace std;
 
             if (start!=max){
                 section.sectionName = [NSString stringWithFormat:@"%04X:0000_CODE", *prev];
+                section.pureCodeSection = NO;
                 section.containsCode = YES;
                 NSString *comment = [NSString stringWithFormat:@"\n%@ SEGMENT\n", section.sectionName];
                 [file setComment:comment atVirtualAddress:start reason:CCReason_Automatic];
@@ -153,7 +154,6 @@ using namespace std;
 
             prev=it;
 
-            NSLog(@"end max %08X %08X %d", end, max, end==max);
         }while(end == max);
     }
 

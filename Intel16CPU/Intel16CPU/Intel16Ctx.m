@@ -14,10 +14,13 @@
 #import <capstone/capstone.h>
 #include <stdlib.h>
 
+#define FORMAT(fmt) if (format == Format_Default) format = fmt
+
 @implementation Intel16Ctx {
     Intel16CPU *_cpu;
     NSObject<HPDisassembledFile> *_file;
     csh _handle;
+    NSArray* intelPtrs;
 }
 
 - (instancetype)initWithCPU:(Intel16CPU *)cpu andFile:(NSObject<HPDisassembledFile> *)file {
@@ -33,6 +36,7 @@
         }else{
             cs_option(_handle, CS_OPT_DETAIL, CS_OPT_SYNTAX_INTEL);
         }
+        intelPtrs = @[@"byte ptr ", @"word ptr ", @"dword ptr "];
     }
     return self;
 }
@@ -47,12 +51,12 @@
 
 - (void)initDisasmStructure:(DisasmStruct *)disasm withSyntaxIndex:(NSUInteger)syntaxIndex {
     bzero(disasm, sizeof(DisasmStruct));
+    disasm->syntaxIndex = _file.userRequestedSyntaxIndex;
 }
 
 // Analysis
 
 - (Address)adjustCodeAddress:(Address)address {
-    NSLog(@"adjust address");
     return address;
 }
 
@@ -149,6 +153,27 @@ static inline uint32_t capstoneRegisterToRegIndex(x86_reg reg){
             return 0;
     }
 }
+
+static inline DisasmSegmentReg capstoneRegisterToSegReg(x86_reg reg){
+    switch(reg){
+        case X86_REG_SS: return DISASM_SS_Reg;
+        case X86_REG_ES: return DISASM_ES_Reg;
+        case X86_REG_DS: return DISASM_DS_Reg;
+        default:
+            return DISASM_CS_Reg;
+    }
+}
+
+static inline NSInteger disasmSegRegToReg(DisasmSegmentReg reg){
+    switch(reg){
+        case DISASM_SS_Reg: return SS;
+        case DISASM_ES_Reg: return ES;
+        case DISASM_DS_Reg: return DS;
+        default:
+            return CS;
+    }
+}
+
 static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
     switch(reg){
         case X86_REG_EFLAGS:
@@ -212,8 +237,8 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
             case X86_OP_MEM: {
                 hop_op->type = DISASM_OPERAND_MEMORY_TYPE;
                 hop_op->memory.displacement = (int16_t) op->mem.disp;
-                if (op->imm){
-                    hop_op->immediateValue = op->imm;
+                if (op->mem.segment != X86_REG_INVALID){
+                    hop_op->segmentReg = capstoneRegisterToSegReg(op->mem.segment);
                 }
                 if (op->mem.base!=X86_REG_INVALID){
                     hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(RegClass_GeneralPurposeRegister);
@@ -222,11 +247,10 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
                     hop_op->memory.baseRegistersMask = mask;
                 }
                 if (op->mem.index!=X86_REG_INVALID){
-                    RegClass idxCls = capstoneRegisterToRegClass(op->mem.index);
+                    hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(RegClass_GeneralPurposeRegister);
                     uint64_t mask = DISASM_BUILD_REGISTER_INDEX_MASK(capstoneRegisterToRegIndex(op->mem.index));
-                    hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(idxCls);
                     hop_op->type |= mask;
-                    hop_op->memory.baseRegistersMask = mask;
+                    hop_op->memory.indexRegistersMask = mask;
                     hop_op->memory.scale = op->mem.scale;
                 }
 
@@ -368,6 +392,15 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
 }
 
 //Printing
+static inline int firstBitIndex(uint64_t mask) {
+    for (int i=0, j=1; i<64; i++, j<<=1) {
+        if (mask & j) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 
 static inline RegClass regClassFromType(uint64_t type) {
     return (RegClass) firstBitIndex(DISASM_GET_REGISTER_CLS_MASK(type));
@@ -381,16 +414,37 @@ static inline int regIndexFromType(uint64_t type) {
     NSObject<HPHopperServices> *services = _cpu.hopperServices;
 
     NSObject<HPASMLine> *line = [services blankASMLine];
-    if ((file.userRequestedSyntaxIndex & 2) != 0){
+    if ((disasm->syntaxIndex & 2) != 0){
         Address va = disasm->virtualAddr;
         Address start=[file sectionForVirtualAddress:va].startAddress;
-        [line appendString:[NSString stringWithFormat:@"%04X:%04X    ",(uint)start >> 4, (uint)(va-start)]];
+        [line appendRawString:[NSString stringWithFormat:@"%04X:%04X    ",(uint)start >> 4, (uint)(va-start)]];
     }
 
     NSString *mnemonic = @(disasm->instruction.mnemonic);
     [line appendMnemonic:mnemonic];
     return line;
 }
+
+
+
+-(void)printRegisterIndex:(NSUInteger)regIdx ofClass:(RegClass)regCls line:(NSObject<HPASMLine> *)line disasm:(DisasmStruct*)disasm {
+    if (disasm->syntaxIndex & 1){
+        [line appendRawString:@"%"];
+    }
+    [line appendRegister:[_cpu registerIndexToString:regIdx
+                                             ofClass:regCls
+                                         withBitSize:16
+                                            position:DISASM_LOWPOSITION
+                                      andSyntaxIndex:disasm->syntaxIndex]
+                 ofClass:regCls
+                andIndex:regIdx];
+}
+-(void)printRegisterType:(DisasmOperandType)type line:(NSObject<HPASMLine> *)line disasm:(DisasmStruct*)disasm {
+    RegClass regCls = regClassFromType(type);
+    int regIdx = regIndexFromType(type);
+    [self printRegisterIndex:regIdx ofClass:regCls line:line disasm:disasm];
+}
+
 
 - (NSObject<HPASMLine> *)buildOperandString:(DisasmStruct *)disasm forOperandIndex:(NSUInteger)operandIndex inFile:(NSObject<HPDisassembledFile> *)file raw:(BOOL)raw {
     if (operandIndex >= DISASM_MAX_OPERANDS) return nil;
@@ -399,77 +453,72 @@ static inline int regIndexFromType(uint64_t type) {
 
     // Get the format requested by the user
     ArgFormat format = [file formatForArgument:operandIndex atVirtualAddress:disasm->virtualAddr];
-
     NSObject<HPHopperServices> *services = _cpu.hopperServices;
-
     NSObject<HPASMLine> *line = [services blankASMLine];
 
-
+    bool att = disasm->syntaxIndex & 1;
+    bool memFilled = false;
+    int regIdx = 0;
 
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {
         if (disasm->instruction.branchType) {
-            if (format == Format_Default) format = Format_Address;
+            FORMAT(Format_Address);
         }else{
-            if (format == Format_Default) format = Format_Hexadecimal;
+            FORMAT(Format_Hexadecimal);
+        }
+        if (att){
+            [line appendRawString:@"$"];
         }
         [line append:[file formatNumber:operand->immediateValue at:disasm->virtualAddr usingFormat:format andBitSize:16]];
     }
     else if (operand->type & DISASM_OPERAND_REGISTER_TYPE) {
-            // Single register
-            RegClass regCls = regClassFromType(operand->type);
-            int regIdx = regIndexFromType(operand->type);
-            [line appendRegister:[_cpu registerIndexToString:regIdx
-                                                     ofClass:regCls
-                                                 withBitSize:16
-                                                    position:DISASM_LOWPOSITION
-                                              andSyntaxIndex:file.userRequestedSyntaxIndex]
-                         ofClass:regCls
-                        andIndex:regIdx];
-    }else{
-        [line appendString:[NSString stringWithCString:operand->userString encoding:NSASCIIStringEncoding]];
-    }
-    /*TODO: color that
-    else if (operand->type & DISASM_OPERAND_MEMORY_TYPE) {
-        [line appendRawString:@"["];
-
+        // Single register
+        [self printRegisterType:operand->type line:line disasm:disasm];
+    }else if (operand->type & DISASM_OPERAND_MEMORY_TYPE) {
+        if (!att){
+            [line appendRawString:intelPtrs[operand->size == 8 ? 0 : (operand->size == 32 ? 2 : 1)]];
+        }
+        if (operand->segmentReg){
+            [self printRegisterIndex:disasmSegRegToReg(operand->segmentReg) ofClass:RegClass_X86_SEG line:line disasm:disasm];
+            [line appendRawString:@":"];
+        }
+        //att disp
+        if (att && operand->memory.displacement){
+            FORMAT(Format_Hexadecimal);
+            [line append:[file formatNumber:operand->memory.displacement at:disasm->virtualAddr usingFormat:format andBitSize:16]];
+        }
+        [line appendRawString:att ? @"(" : @"["];
+        //base
         if (operand->memory.baseRegistersMask) {
             int regIdx = firstBitIndex(operand->memory.baseRegistersMask);
-            [line appendRegister:[_cpu registerIndexToString:regIdx
-                                                     ofClass:(RegClass) RegClass_GeneralPurposeRegister
-                                                 withBitSize:16
-                                                    position:DISASM_LOWPOSITION
-                                              andSyntaxIndex:file.userRequestedSyntaxIndex]
-                         ofClass:(RegClass) RegClass_GeneralPurposeRegister
-                        andIndex:regIdx];
-            if (operand->memory.indexRegistersMask){
-                [line appendRawString:@"+"];
-                regIdx = firstBitIndex(operand->memory.baseRegistersMask);
-                [line appendRegister:[_cpu registerIndexToString:regIdx
-                                                         ofClass:(RegClass) RegClass_GeneralPurposeRegister
-                                                     withBitSize:16
-                                                        position:DISASM_LOWPOSITION
-                                                  andSyntaxIndex:file.userRequestedSyntaxIndex]
-                             ofClass:(RegClass) RegClass_GeneralPurposeRegister
-                            andIndex:regIdx];
-                if(operand->memory.scale>1){
-                    if (format == Format_Default)
-                        format = (ArgFormat) (Format_Decimal);
-                    [line append:[file formatNumber:operand->memory.scale at:disasm->virtualAddr usingFormat:format andBitSize:16]];
-                }
-            }
-            if (operand->memory.displacement){
-                [line appendRawString:@"+"];
-                format = (ArgFormat) (Format_Decimal | Format_Signed);
-                [line append:[file formatNumber:operand->memory.displacement at:disasm->virtualAddr usingFormat:format andBitSize:16]];
-
-            }
-        }else{
-            if (format == Format_Default) format = Format_Address;
-            [line append:[file formatNumber:operand->immediateValue at:disasm->virtualAddr usingFormat:format andBitSize:16]];
+            [self printRegisterIndex:regIdx ofClass:RegClass_GeneralPurposeRegister line:line disasm:disasm];
+            memFilled = true;
         }
-        [line appendRawString:@"]"];
+        //index
+        if (operand->memory.indexRegistersMask){
+            if (memFilled){
+                [line appendRawString:att ? @"," : @"+"];
+            }
+            regIdx = firstBitIndex(operand->memory.indexRegistersMask);
+            [self printRegisterIndex:regIdx ofClass:RegClass_GeneralPurposeRegister line:line disasm:disasm];
+            if(operand->memory.scale>1){
+                [line appendRawString:att ? @"," : @"*"];
+                [line append:[file formatNumber:operand->memory.scale at:disasm->virtualAddr usingFormat:Format_Decimal andBitSize:16]];
+            }
+            memFilled = true;
+        }
+        //intel disp
+        if (!att && operand->memory.displacement){
+            if (memFilled){
+                [line appendRawString:@"+"];
+            }
+            FORMAT(Format_Hexadecimal);
+            [line append:[file formatNumber:operand->memory.displacement at:disasm->virtualAddr usingFormat:format andBitSize:16]];
+        }
+        [line appendRawString:att ? @")" : @"]"];
+    }else{
+        [line appendRawString:[NSString stringWithCString:operand->userString encoding:NSASCIIStringEncoding]];
     }
-     */
 
     [line setIsOperand:operandIndex startingAtIndex:0];
 

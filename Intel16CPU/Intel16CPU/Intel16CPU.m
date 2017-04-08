@@ -123,8 +123,8 @@
 }
 
 - (NSString *)lowercaseStringForRegister:(NSUInteger)reg ofClass:(RegClass)reg_class {
-    static NSString *GNames[] = {@"ah", @"al", @"ax", @"bh", @"bl",@"bx",
-        @"ch", @"cl", @"cx", @"dh", @"dl", @"dx", @"bp", @"sp", @"si", @"di", @"ip"};
+    static NSString *GNames[] = {@"ah", @"al", @"bh", @"bl", @"ch", @"cl", @"dh", @"dl",
+        @"ax", @"bx", @"cx", @"dx", @"bp", @"sp", @"si", @"di", @"ip"};
     static NSString *SNames[] = {@"cs", @"ds", @"es", @"ss"};
 
     switch (reg_class) {
@@ -138,8 +138,6 @@
 
 - (NSString *)registerIndexToString:(NSUInteger)reg ofClass:(RegClass)reg_class withBitSize:(NSUInteger)size position:(DisasmPosition)position andSyntaxIndex:(NSUInteger)syntaxIndex {
     NSString *regName = [self lowercaseStringForRegister:reg ofClass:reg_class];
-    if (syntaxIndex == 1)
-        regName = [NSString stringWithFormat:@"%%%@", regName];
     return regName;
 }
 

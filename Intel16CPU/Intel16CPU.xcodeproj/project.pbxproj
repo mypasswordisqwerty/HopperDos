@@ -10,7 +10,6 @@
 		523E54BB1E904344007D2654 /* Intel16CPU.m in Sources */ = {isa = PBXBuildFile; fileRef = 523E54BA1E904344007D2654 /* Intel16CPU.m */; };
 		523E54BE1E9044A6007D2654 /* Intel16Ctx.m in Sources */ = {isa = PBXBuildFile; fileRef = 523E54BD1E9044A6007D2654 /* Intel16Ctx.m */; };
 		523E54C11E9044DD007D2654 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 523E54C01E9044DD007D2654 /* CoreFoundation.framework */; };
-		52EDA45F1E9072180088D4FA /* libcapstone.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 52EDA45E1E9072180088D4FA /* libcapstone.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,7 +20,6 @@
 		523E54BC1E9044A6007D2654 /* Intel16Ctx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Intel16Ctx.h; sourceTree = "<group>"; };
 		523E54BD1E9044A6007D2654 /* Intel16Ctx.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Intel16Ctx.m; sourceTree = "<group>"; };
 		523E54C01E9044DD007D2654 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		52EDA45E1E9072180088D4FA /* libcapstone.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcapstone.a; path = ../../lib/libcapstone.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,7 +27,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				52EDA45F1E9072180088D4FA /* libcapstone.a in Frameworks */,
 				523E54C11E9044DD007D2654 /* CoreFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -69,7 +66,6 @@
 		523E54BF1E9044DD007D2654 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				52EDA45E1E9072180088D4FA /* libcapstone.a */,
 				523E54C01E9044DD007D2654 /* CoreFoundation.framework */,
 			);
 			name = Frameworks;
@@ -249,6 +245,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Intel16CPU/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				OTHER_LDFLAGS = "-lcapstone";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bjfn.Intel16CPU;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -262,6 +259,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Intel16CPU/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				OTHER_LDFLAGS = "-lcapstone";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bjfn.Intel16CPU;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

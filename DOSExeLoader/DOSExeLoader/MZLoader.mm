@@ -137,13 +137,13 @@ using namespace std;
             NSObject<HPSection> *section = [segment addSectionAt:start size:sz];
 
             if (start!=max){
-                section.sectionName = [NSString stringWithFormat:@"%04X:0000_CODE", *prev];
+                section.sectionName = [NSString stringWithFormat:@"%04X:0000 CODE", *prev];
                 section.pureCodeSection = NO;
                 section.containsCode = YES;
                 NSString *comment = [NSString stringWithFormat:@"\n%@ SEGMENT\n", section.sectionName];
                 [file setComment:comment atVirtualAddress:start reason:CCReason_Automatic];
             }else{
-                section.sectionName = [NSString stringWithFormat:@"%04X:0000_DATA", *prev];
+                section.sectionName = [NSString stringWithFormat:@"%04X:0000 DATA", *prev];
                 section.pureDataSection = YES;
                 NSString *comment = [NSString stringWithFormat:@"\n%@ SEGMENT\n", section.sectionName];
                 [file setComment:comment atVirtualAddress:start reason:CCReason_Automatic];

@@ -199,32 +199,15 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
     disasm->instruction.addressValue = 0;
     disasm->instruction.pcRegisterValue = disasm->virtualAddr + insn->size;
 
-    char* oppos = insn->op_str;
-    char* cpos = strchr(oppos, ',');
-    if (!cpos){
-        cpos=oppos + strlen(oppos);
-    }
-
     int op_index;
     for (op_index=0; op_index<insn->detail->x86.op_count; op_index++) {
         cs_x86_op *op = insn->detail->x86.operands + op_index;
         DisasmOperand *hop_op = disasm->operand + op_index;
 
-        strncpy(hop_op->userString, oppos, cpos - oppos);
-        hop_op->userString[cpos - oppos] = 0;
-        if (*cpos != 0 && cpos[1]!=0){
-            oppos = cpos+1;
-            while(*oppos!=0 && *oppos == ' ') oppos++;
-            cpos = strchr(oppos, ',');
-            if (!cpos){
-                cpos = oppos + strlen(oppos);
-            }
-        }
-
         switch (op->type) {
             case X86_OP_IMM:
                 hop_op->type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
-                hop_op->immediateValue = insn->detail->x86.operands[op_index].imm;
+                hop_op->immediateValue = op->imm;
                 break;
 
             case X86_OP_REG:
@@ -280,21 +263,24 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
 
     if (cs_insn_group(_handle, insn, X86_GRP_JUMP) || cs_insn_group(_handle, insn, X86_GRP_CALL)) {
         if (insn->detail->x86.op_count > 0) {
-            int lastOperandIndex = insn->detail->x86.op_count - 1;
-            cs_x86_op *lastOperand = &insn->detail->x86.operands[lastOperandIndex];
-            if (lastOperand->type == X86_OP_IMM) {
-                disasm->instruction.addressValue = lastOperand->imm;
-                disasm->operand[lastOperandIndex].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
-                disasm->operand[lastOperandIndex].memory.displacement = disasm->instruction.addressValue;
+            cs_x86_op *firstOperand = &insn->detail->x86.operands[0];
+            if (insn->detail->x86.op_count == 2){
+                cs_x86_op *op = &insn->detail->x86.operands[1];
+                if (firstOperand->type == X86_OP_IMM && op->type == X86_OP_IMM){
+                    firstOperand->imm <<= 4;
+                    firstOperand->imm += op->imm;
+                }
+                disasm->operand[1].type = DISASM_OPERAND_NO_OPERAND;
             }
-
-            if (lastOperand->type == X86_OP_MEM) {
-                disasm->operand[lastOperandIndex].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ABSOLUTE;
-                disasm->instruction.addressValue = lastOperand->imm;
+            if (firstOperand->type == X86_OP_IMM) {
+                disasm->instruction.addressValue = firstOperand->imm;
+                disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+            }else{
+                disasm->operand[0].type |= DISASM_OPERAND_ABSOLUTE;
             }
-            disasm->operand[lastOperandIndex].isBranchDestination = 1;
+            disasm->operand[0].isBranchDestination = 1;
             if (disasm->instruction.addressValue)
-                disasm->operand[lastOperandIndex].immediateValue = disasm->instruction.addressValue;
+                disasm->operand[0].immediateValue = disasm->instruction.addressValue;
         }
 
         if(cs_insn_group(_handle, insn, X86_GRP_CALL)){
@@ -332,6 +318,7 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
                 disasm->instruction.branchType = DISASM_BRANCH_JL;
                 break;
             case X86_INS_JMP:
+            case X86_INS_LJMP:
                 disasm->instruction.branchType = DISASM_BRANCH_JMP;
                 break;
             case X86_INS_JNE:
@@ -455,6 +442,7 @@ static inline int regIndexFromType(uint64_t type) {
     ArgFormat format = [file formatForArgument:operandIndex atVirtualAddress:disasm->virtualAddr];
     NSObject<HPHopperServices> *services = _cpu.hopperServices;
     NSObject<HPASMLine> *line = [services blankASMLine];
+    [line setIsOperand:operandIndex startingAtIndex:0];
 
     bool att = disasm->syntaxIndex & 1;
     bool memFilled = false;
@@ -486,6 +474,9 @@ static inline int regIndexFromType(uint64_t type) {
         if (att && operand->memory.displacement){
             FORMAT(Format_Hexadecimal);
             [line append:[file formatNumber:operand->memory.displacement at:disasm->virtualAddr usingFormat:format andBitSize:16]];
+            if (!operand->memory.baseRegistersMask && !operand->memory.indexRegistersMask){
+                return line;
+            }
         }
         [line appendRawString:att ? @"(" : @"["];
         //base

@@ -80,6 +80,10 @@
     return 1;
 }
 
+- (Class)cpuContextClass {
+    return [Intel16Ctx class];
+}
+
 - (NSArray<NSString *> *)cpuModeNames {
     return @[@"generic"];
 }
@@ -119,6 +123,10 @@
 }
 
 - (BOOL)registerIndexIsProgramCounter:(NSUInteger)reg {
+    return NO;
+}
+
+- (BOOL)registerHasSideEffectForIndex:(NSUInteger)reg andClass:(RegClass)reg_class {
     return NO;
 }
 

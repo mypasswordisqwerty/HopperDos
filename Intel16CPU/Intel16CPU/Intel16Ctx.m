@@ -569,6 +569,12 @@ static inline int regIndexFromType(uint64_t type) {
     return YES;
 }
 
+- (BOOL)instructionOnlyLoadsAddress:(DisasmStruct *)disasmStruct {
+    char* ins=disasmStruct->instruction.mnemonic;
+    return ins[0]=='l' && (ins[1]=='e' || ins[1]=='d') && (ins[2]=='a' || ins[2]=='s');
+}
+
+
 - (BOOL)instructionMayBeASwitchStatement:(DisasmStruct *)disasmStruct {
     return NO;
 }

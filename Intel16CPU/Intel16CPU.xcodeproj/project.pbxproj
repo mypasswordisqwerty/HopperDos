@@ -7,12 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		523980691F233D53002B2993 /* ints.json in Resources */ = {isa = PBXBuildFile; fileRef = 523980671F233D53002B2993 /* ints.json */; };
+		5239806A1F233D53002B2993 /* ports.json in Resources */ = {isa = PBXBuildFile; fileRef = 523980681F233D53002B2993 /* ports.json */; };
 		523E54BB1E904344007D2654 /* Intel16CPU.m in Sources */ = {isa = PBXBuildFile; fileRef = 523E54BA1E904344007D2654 /* Intel16CPU.m */; };
 		523E54BE1E9044A6007D2654 /* Intel16Ctx.m in Sources */ = {isa = PBXBuildFile; fileRef = 523E54BD1E9044A6007D2654 /* Intel16Ctx.m */; };
 		523E54C11E9044DD007D2654 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 523E54C01E9044DD007D2654 /* CoreFoundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		523980671F233D53002B2993 /* ints.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = ints.json; path = Intel16CPU/ints.json; sourceTree = "<group>"; };
+		523980681F233D53002B2993 /* ports.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = ports.json; path = Intel16CPU/ports.json; sourceTree = "<group>"; };
 		523E54B01E90431E007D2654 /* Intel16CPU.hopperCPU */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Intel16CPU.hopperCPU; sourceTree = BUILT_PRODUCTS_DIR; };
 		523E54B31E90431E007D2654 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		523E54B91E904344007D2654 /* Intel16CPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Intel16CPU.h; sourceTree = "<group>"; };
@@ -34,9 +38,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5239806B1F233D58002B2993 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				523980671F233D53002B2993 /* ints.json */,
+				523980681F233D53002B2993 /* ports.json */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
 		523E54A71E90431E007D2654 = {
 			isa = PBXGroup;
 			children = (
+				5239806B1F233D58002B2993 /* Resources */,
 				523E54B21E90431E007D2654 /* Intel16CPU */,
 				523E54B11E90431E007D2654 /* Products */,
 				523E54BF1E9044DD007D2654 /* Frameworks */,
@@ -128,6 +142,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5239806A1F233D53002B2993 /* ports.json in Resources */,
+				523980691F233D53002B2993 /* ints.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

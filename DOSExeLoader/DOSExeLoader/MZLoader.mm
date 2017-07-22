@@ -145,6 +145,7 @@ using namespace std;
             }else{
                 section.sectionName = [NSString stringWithFormat:@"%04X:0000 DATA", *prev];
                 section.pureDataSection = YES;
+                section.containsCode = NO;
                 NSString *comment = [NSString stringWithFormat:@"\n%@ SEGMENT\n", section.sectionName];
                 [file setComment:comment atVirtualAddress:start reason:CCReason_Automatic];
 

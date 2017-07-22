@@ -11,7 +11,9 @@
 #import <Hopper/CommonTypes.h>
 #import <Hopper/CPUDefinition.h>
 #import <Hopper/HPDisassembledFile.h>
-#import <capstone/capstone.h>
+#import "OpComment.h"
+
+#include <capstone/capstone.h>
 #include <stdlib.h>
 
 #define FORMAT(fmt) if (format == Format_Default) format = fmt
@@ -127,68 +129,6 @@
     return 0;
 }
 
-static inline uint32_t capstoneRegisterToRegIndex(x86_reg reg){
-    switch(reg){
-        case X86_REG_EFLAGS: return 0;
-        case X86_REG_AH: return AH;
-        case X86_REG_AL: return AL;
-        case X86_REG_AX: return AX;
-        case X86_REG_BH: return BH;
-        case X86_REG_BL: return BL;
-        case X86_REG_BX: return BX;
-        case X86_REG_CH: return CH;
-        case X86_REG_CL: return CL;
-        case X86_REG_CX: return CX;
-        case X86_REG_DH: return DH;
-        case X86_REG_DL: return DL;
-        case X86_REG_DX: return DX;
-        case X86_REG_BP: return BP;
-        case X86_REG_SP: return SP;
-        case X86_REG_SI: return SI;
-        case X86_REG_DI: return DI;
-        case X86_REG_IP: return IP;
-        case X86_REG_CS: return CS;
-        case X86_REG_DS: return DS;
-        case X86_REG_ES: return ES;
-        case X86_REG_SS: return SS;
-        default:
-            return 0;
-    }
-}
-
-static inline DisasmSegmentReg capstoneRegisterToSegReg(x86_reg reg){
-    switch(reg){
-        case X86_REG_SS: return DISASM_SS_Reg;
-        case X86_REG_ES: return DISASM_ES_Reg;
-        case X86_REG_DS: return DISASM_DS_Reg;
-        default:
-            return DISASM_CS_Reg;
-    }
-}
-
-static inline NSInteger disasmSegRegToReg(DisasmSegmentReg reg){
-    switch(reg){
-        case DISASM_SS_Reg: return SS;
-        case DISASM_ES_Reg: return ES;
-        case DISASM_DS_Reg: return DS;
-        default:
-            return CS;
-    }
-}
-
-static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
-    switch(reg){
-        case X86_REG_EFLAGS:
-            return RegClass_CPUState;
-        case X86_REG_CS:
-        case X86_REG_DS:
-        case X86_REG_ES:
-        case X86_REG_SS:
-            return RegClass_X86_SEG;
-        default:
-            return RegClass_GeneralPurposeRegister;
-    }
-}
 
 - (int)disassembleSingleInstruction:(DisasmStruct *)disasm usingProcessorMode:(NSUInteger)mode {
     if (disasm->bytes == NULL) return DISASM_UNKNOWN_OPCODE;
@@ -199,6 +139,7 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
 
     disasm->instruction.branchType = DISASM_BRANCH_NONE;
     disasm->instruction.addressValue = 0;
+    disasm->instruction.userData = (uintptr_t)insn->id;
     disasm->instruction.pcRegisterValue = disasm->virtualAddr + insn->size;
 
     int op_index;
@@ -214,8 +155,8 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
 
             case X86_OP_REG:
                 hop_op->type = DISASM_OPERAND_REGISTER_TYPE;
-                hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(capstoneRegisterToRegClass(op->reg));
-                hop_op->type |= DISASM_BUILD_REGISTER_INDEX_MASK(capstoneRegisterToRegIndex(op->reg));
+                hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK([_cpu capstoneToRegClass:op->reg]);
+                hop_op->type |= DISASM_BUILD_REGISTER_INDEX_MASK([_cpu capstoneToRegIndex:op->reg]);
                 break;
 
 
@@ -223,17 +164,17 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
                 hop_op->type = DISASM_OPERAND_MEMORY_TYPE;
                 hop_op->memory.displacement = (int16_t) op->mem.disp;
                 if (op->mem.segment != X86_REG_INVALID){
-                    hop_op->segmentReg = capstoneRegisterToSegReg(op->mem.segment);
+                    hop_op->segmentReg = (DisasmSegmentReg)[_cpu capstoneToRegIndex:op->mem.segment];
                 }
                 if (op->mem.base!=X86_REG_INVALID){
                     hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(RegClass_GeneralPurposeRegister);
-                    uint64_t mask = DISASM_BUILD_REGISTER_INDEX_MASK(capstoneRegisterToRegIndex(op->mem.base));
+                    uint64_t mask = DISASM_BUILD_REGISTER_INDEX_MASK([_cpu capstoneToRegIndex:op->mem.base]);
                     hop_op->type |= mask;
                     hop_op->memory.baseRegistersMask = mask;
                 }
                 if (op->mem.index!=X86_REG_INVALID){
                     hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(RegClass_GeneralPurposeRegister);
-                    uint64_t mask = DISASM_BUILD_REGISTER_INDEX_MASK(capstoneRegisterToRegIndex(op->mem.index));
+                    uint64_t mask = DISASM_BUILD_REGISTER_INDEX_MASK([_cpu capstoneToRegIndex:op->mem.index]);
                     hop_op->type |= mask;
                     hop_op->memory.indexRegistersMask = mask;
                     hop_op->memory.scale = op->mem.scale;
@@ -357,6 +298,7 @@ static inline RegClass capstoneRegisterToRegClass(x86_reg reg){
     int len = (int) insn->size;
     cs_free(insn, count);
 
+    [_cpu updateState:disasm];
     return len;
 }
 
@@ -475,7 +417,7 @@ static inline int regIndexFromType(uint64_t type) {
             [line appendRawString:intelPtrs[operand->size == 8 ? 0 : (operand->size == 32 ? 2 : 1)]];
         }
         if (operand->segmentReg){
-            [self printRegisterIndex:disasmSegRegToReg(operand->segmentReg) ofClass:RegClass_X86_SEG line:line disasm:disasm];
+            [self printRegisterIndex:operand->segmentReg ofClass:RegClass_X86_SEG line:line disasm:disasm];
             [line appendRawString:@":"];
         }
         //att disp
@@ -534,6 +476,11 @@ static inline int regIndexFromType(uint64_t type) {
         if (part == nil) break;
         if (op_index) [line appendRawString:@", "];
         [line append:part];
+    }
+
+    NSString* comment = [OpComment commentForOpcode:disasm CPU:_cpu];
+    if (comment){
+        [line appendComment: comment];
     }
 
     return line;

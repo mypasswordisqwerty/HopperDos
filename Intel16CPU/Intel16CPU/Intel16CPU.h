@@ -8,18 +8,23 @@
 
 #import <Foundation/Foundation.h>
 #import <Hopper/Hopper.h>
+#include <capstone/capstone.h>
 
 typedef NS_ENUM(NSUInteger, GRegs) {
     AH, AL, BH, BL, CH, CL, DH, DL, AX, BX, CX, DX, BP, SP, SI, DI, IP,
+    EAX, EBX, ECX, EDX, EBP, ESP, ESI, EDI, EIP
 };
 
-typedef NS_ENUM(NSUInteger, SRegs) {
-    CS, DS, ES, SS
-};
-
+#define UNDEFINED_STATE     ((int64_t)-1)
 
 @interface Intel16CPU : NSObject<CPUDefinition>
 
 - (NSObject<HPHopperServices> *)hopperServices;
+
+- (NSUInteger)capstoneToRegIndex:(x86_reg)reg;
+- (RegClass)capstoneToRegClass:(x86_reg)reg;
+- (void)clearState;
+- (void)updateState:(DisasmStruct*)disasm;
+- (int64_t)valueReg:(NSUInteger)reg ofClass:(RegClass)rclass;
 
 @end

@@ -86,7 +86,7 @@
     NSObject<HPSection> *section = [segment addSectionAt:0x100 size:[data length]];
 
     segment.segmentName = @"CODE";
-    section.sectionName = @"code";
+    section.sectionName = COM_SECTION;
     section.containsCode = YES;
     NSString *comment = [NSString stringWithFormat:@"\n\nDOS COM %@\n\n", segment.segmentName];
     [file setComment:comment atVirtualAddress:0x100 reason:CCReason_Automatic];

@@ -21,6 +21,7 @@
     NSObject<HPDisassembledFile> *_file;
     csh _handle;
     NSArray* intelPtrs;
+    int isComSection;
 }
 
 - (instancetype)initWithCPU:(Intel16CPU *)cpu andFile:(NSObject<HPDisassembledFile> *)file {
@@ -37,6 +38,7 @@
             cs_option(_handle, CS_OPT_DETAIL, CS_OPT_SYNTAX_INTEL);
         }
         intelPtrs = @[@"byte ptr ", @"word ptr ", @"dword ptr "];
+        isComSection = -1;
     }
     return self;
 }
@@ -404,6 +406,12 @@ static inline int regIndexFromType(uint64_t type) {
     if ((disasm->syntaxIndex & 2) != 0){
         Address va = disasm->virtualAddr;
         Address start=[file sectionForVirtualAddress:va].startAddress;
+        if (isComSection==-1){
+            isComSection = [[file sectionForVirtualAddress:va].sectionName isEqualToString:COM_SECTION] ? 1 : 0;
+        }
+        if (start==0x100 && isComSection){
+            start = 0;
+        }
         [line appendRawString:[NSString stringWithFormat:@"%04X:%04X    ",(uint)start >> 4, (uint)(va-start)]];
     }
 

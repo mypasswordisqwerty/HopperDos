@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 
 class App:
+    MODE_INIT = -1
     MODE_WAIT = 0
     MODE_INT = 1
     MODE_PARAMS = 2
@@ -16,6 +17,7 @@ class App:
     def __init__(self):
         self.mode = self.MODE_WAIT
         self.curInt = None
+        self.path = None
 
     def ishex(self, string):
         for x in string:
@@ -41,7 +43,7 @@ class App:
             i = i[:-1]
         if o['cond'] is None:
             if i not in obj:
-                obj[i] = o['name'] + o['params']
+                obj[i] = {'name': o['name'] + o['params']}
             return
         if i not in obj or isinstance(obj[i], basestring):
             obj[i] = {}
@@ -49,7 +51,7 @@ class App:
         if reg not in obj[i]:
             obj[i][reg] = OrderedDict()
         val = o['cond'][1]
-        obj[i][reg][val] = o['name'] + o['params']
+        obj[i][reg][val] = (o['name'] + "\n" + o['params']).strip().replace("\r\n\n", "\n")
 
     def readInt(self, line, obj):
         if not line.startswith("INT "):
@@ -57,7 +59,7 @@ class App:
             return
         words = line.split()
         inter = words[1]
-        self.curInt = {'int': inter, 'name': '-'.join(line.split('-')[1:]), 'cond': None, 'params': ""}
+        self.curInt = {'int': inter, 'name': '-'.join(line.split('-')[1:]).strip(), 'cond': None, 'params': ""}
         self.mode = self.MODE_PARAMS
 
     def params(self, line, obj):
@@ -83,6 +85,15 @@ class App:
             self.curInt['params'] += "\n" + line
 
     def parseInts(self, line, obj):
+        if line is None:
+            with open(os.path.join(self.path, "OVERVIEW.LST")) as f:
+                for line in f:
+                    if not line.startswith("INT "):
+                        continue
+                    words = line.split()
+                    obj[words[1]] = {'name': ' '.join(words[3:])}
+            return
+
         if line.startswith("--------"):
             self.saveInt(obj)
         if self.mode == self.MODE_WAIT:
@@ -93,7 +104,7 @@ class App:
             self.params(line, obj)
 
     def parsePorts(self, line, obj):
-        if not self.ishex(line[0]):
+        if line is None or not self.ishex(line[0]):
             return
         words = line.split()
         if len(words) < 3 or len(words[0]) < 4:
@@ -103,9 +114,12 @@ class App:
             return
         obj[key] = ' '.join(words[2:])
 
-    def parseFiles(self, path, outfile, proc):
+    def parseFiles(self, file, outfile, proc):
         ext = 'A'
         data = OrderedDict()
+        path = os.path.join(self.path, file)
+        self.mode = self.MODE_INIT
+        proc(None, data)
         while os.path.exists(path + ext):
             fname = path + ext
             ext = chr(ord(ext) + 1)
@@ -123,9 +137,9 @@ class App:
                 if o in ("-h", "--help"):
                     return self.usage()
 
-            path = args[1] if len(args) > 1 else os.path.realpath(__file__)
-            self.parseFiles(os.path.join(path, "INTERRUP."), "ints.json", self.parseInts)
-            self.parseFiles(os.path.join(path, "PORTS."), "ports.json", self.parsePorts)
+            self.path = args[1] if len(args) > 1 else os.path.realpath(__file__)
+            self.parseFiles("INTERRUP.", "ints.json", self.parseInts)
+            self.parseFiles("PORTS.", "ports.json", self.parsePorts)
         except getopt.GetoptError as e:
             print str(e)
             return self.usage()

@@ -24,12 +24,16 @@ typedef NS_ENUM(NSUInteger, SRegs) {
 @interface Intel16CPU : NSObject<CPUDefinition>
 
 - (NSObject<HPHopperServices> *)hopperServices;
+- (void)setFile:(NSObject<HPDisassembledFile>*)file;
 
 - (NSUInteger)capstoneToRegIndex:(x86_reg)reg;
 - (RegClass)capstoneToRegClass:(x86_reg)reg;
 - (void)clearState;
 - (void)updateState:(DisasmStruct*)disasm;
+- (void)setCapstoneReg:(x86_reg)reg value:(int64_t)value;
+- (int64_t)getCapstoneReg:(x86_reg)reg;
 - (void)setReg:(NSUInteger)reg ofClass:(RegClass)rclass value:(int64_t)value;
 - (int64_t)getReg:(NSUInteger)reg ofClass:(RegClass)rclass;
-
+- (uint)getCS;
+- (uint)getIP;
 @end

@@ -12,8 +12,15 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <functional>
+#include "../../DOSComLoader/DOSComLoader/ComLoader.h"
 
 using namespace std;
+
+#define OP_CAN_DEFINE   1
+#define OP_DEF_SELF     2
+#define OP_UNARY        4
+
 
 struct RegInfo{
     x86_reg capstone;
@@ -31,8 +38,13 @@ static struct CpuState{
     vector<int64_t> stack;
 } _state;
 
+struct OpInfo{
+    x86_insn insn;
+    int flags;
+    function<uint32_t (uint32_t, uint32_t)> proc;
+};
 
-static RegInfo regs[]={
+static RegInfo regs[] = {
     {X86_REG_EFLAGS, 0, RegClass_CPUState, &_state.EFLAGS, 4, @"eflags"},
     {X86_REG_AL, AL, RegClass_GeneralPurposeRegister, &_state.EAX, 1, @"al"},
     {X86_REG_AH, AH, RegClass_GeneralPurposeRegister, &_state.EAX, 0x101, @"ah"},
@@ -40,7 +52,7 @@ static RegInfo regs[]={
     {X86_REG_EAX, EAX, RegClass_GeneralPurposeRegister, &_state.EAX, 4, @"eax"},
     {X86_REG_BL, BL, RegClass_GeneralPurposeRegister, &_state.EBX, 1, @"bl"},
     {X86_REG_BH, BH, RegClass_GeneralPurposeRegister, &_state.EBX, 0x101, @"bh"},
-    {X86_REG_BX, BX, RegClass_GeneralPurposeRegister, &_state.EBX, 2, @"bs"},
+    {X86_REG_BX, BX, RegClass_GeneralPurposeRegister, &_state.EBX, 2, @"bx"},
     {X86_REG_EBX, EBX, RegClass_GeneralPurposeRegister, &_state.EBX, 4, @"ebx"},
     {X86_REG_CL, CL, RegClass_GeneralPurposeRegister, &_state.ECX, 1, @"cl"},
     {X86_REG_CH, CH, RegClass_GeneralPurposeRegister, &_state.ECX, 0x101, @"ch"},
@@ -69,31 +81,60 @@ static RegInfo regs[]={
     {X86_REG_INVALID, 0, RegClass_X86_SEG, NULL, 2, @"invalid"},
 };
 
+static OpInfo ops[] = {
+    {X86_INS_MOV, OP_CAN_DEFINE, [](uint32_t r,uint32_t v) {return v;}},
+    {X86_INS_XOR, OP_CAN_DEFINE | OP_DEF_SELF, [](uint32_t r,uint32_t v) {return r ^ v;}},
+    {X86_INS_SUB, OP_CAN_DEFINE | OP_DEF_SELF, [](uint32_t r,uint32_t v) {return r - v;}},
+    {X86_INS_ADD, 0, [](uint32_t r,uint32_t v) {return r + v;}},
+    {X86_INS_AND, 0, [](uint32_t r,uint32_t v) {return r & v;}},
+    {X86_INS_OR, 0, [](uint32_t r,uint32_t v) {return r | v;}},
+    {X86_INS_INC, OP_UNARY, [](uint32_t r,uint32_t v) {return r+1;}},
+    {X86_INS_DEC, OP_UNARY, [](uint32_t r,uint32_t v) {return r-1;}},
+    {X86_INS_NOT, OP_UNARY, [](uint32_t r,uint32_t v) {return ~r;}},
+    {X86_INS_INVALID, 0, nullptr},
+};
 
 
 @implementation Intel16CPU {
     NSObject<HPHopperServices> *_services;
+    NSObject<HPDisassembledFile> *_file;
     map<x86_reg, RegInfo*> capstoneRegs;
     map<RegClass, map<NSUInteger, RegInfo*>> localRegs;
-}
-
-- (void)fillRegs {
-    for (RegInfo& it: regs){
-        capstoneRegs[it.capstone] = &it;
-        localRegs[it.rclass][it.rid] = &it;
-        if (it.capstone==X86_REG_INVALID){
-            break;
-        }
-    }
+    BOOL isComFile;
+    map<x86_insn, OpInfo*> procs;
 }
 
 - (instancetype)initWithHopperServices:(NSObject<HPHopperServices> *)services {
     if (self = [super init]) {
         _services = services;
-        [self fillRegs];
+        isComFile = -1;
+        for (RegInfo& it: regs){
+            capstoneRegs[it.capstone] = &it;
+            localRegs[it.rclass][it.rid] = &it;
+            if (it.capstone==X86_REG_INVALID){
+                break;
+            }
+        }
+        for (OpInfo& it: ops){
+            if (it.insn == X86_INS_INVALID){
+                break;
+            }
+            procs[it.insn] = &it;
+        }
         [self clearState];
     }
     return self;
+}
+
+- (void)setFile:(NSObject<HPDisassembledFile>*)file{
+    _file = file;
+    isComFile = [[[_file firstSegment] segmentName] isEqualToString: COM_SEGMENT];
+    [self setCapstoneReg:X86_REG_FS value:UNDEFINED_STATE];
+    [self setCapstoneReg:X86_REG_GS value:UNDEFINED_STATE];
+    [self setCapstoneReg:X86_REG_CS value:0];
+    [self setCapstoneReg:X86_REG_DS value:0];
+    [self setCapstoneReg:X86_REG_ES value:0];
+    [self setCapstoneReg:X86_REG_SS value:0];
 }
 
 - (NSObject<HPHopperServices> *)hopperServices {
@@ -151,7 +192,7 @@ static RegInfo regs[]={
 }
 
 - (NSUInteger)cpuModeCount {
-    return 1;
+    return 2;
 }
 
 - (Class)cpuContextClass {
@@ -159,7 +200,7 @@ static RegInfo regs[]={
 }
 
 - (NSArray<NSString *> *)cpuModeNames {
-    return @[@"generic"];
+    return @[@"real", @"protected"];
 }
 
 - (NSUInteger)syntaxVariantCount {
@@ -237,28 +278,89 @@ static RegInfo regs[]={
 }
 
 - (NSUInteger)capstoneToRegIndex:(x86_reg)reg {
-    NSLog(@"cap to idx %d %d", (int)reg, (int)capstoneRegs[reg]->rid);
-    return capstoneRegs[reg]->rid;
+    RegInfo* info = capstoneRegs[reg];
+    return info ? info->rid : 0;
 }
 
 - (RegClass)capstoneToRegClass:(x86_reg)reg {
-    return capstoneRegs[reg]->rclass;
+    RegInfo* info = capstoneRegs[reg];
+    return info ? info->rclass : RegClass_CPUState;
 }
 
 - (void)clearState {
-    //set state to int64 0xFFFFFFFFFFFFFFFF
-    memset(&_state, 0xFF, 16*sizeof(int64_t));
+    //undefine GP regs
+    memset(&_state, 0xFF, 8*sizeof(int64_t));
     _state.stack.clear();
 }
 
-- (void)updateState:(DisasmStruct*)disasm{
-    
+- (void)updateCSIP:(DisasmStruct*)disasm {
+    Address va = disasm->virtualAddr;
+    Address start=0;
+    if (!isComFile){
+        start=[_file sectionForVirtualAddress:va].startAddress;
+    }
+    [self setCapstoneReg:X86_REG_CS value:start >> 4];
+    [self setCapstoneReg:X86_REG_EIP value:va-start];
 }
 
-- (void)setReg:(NSUInteger)reg ofClass:(RegClass)rclass value:(int64_t)value{
-    RegInfo* info=localRegs[rclass][reg];
+- (void)updateState:(DisasmStruct*)disasm{
+    [self updateCSIP:disasm];
+    x86_insn opId = (x86_insn)disasm->instruction.userData;
+    if (!procs.count(opId)){
+        return;
+    }
+    DisasmOperand* dop=&disasm->operand[0];
+    DisasmOperand* sop=&disasm->operand[1];
+    if (sop->type == DISASM_OPERAND_NO_OPERAND){
+        //one operand
+        sop = dop;
+    }
+    if (disasm->syntaxIndex & 1){
+        //AT & T switch dest/source operands
+        swap(dop, sop);
+    }
+    if (!(dop->type & DISASM_OPERAND_REGISTER_TYPE)){
+        //not register dest
+        return;
+    }
+    OpInfo* op = procs[opId];
+    x86_reg dreg =(x86_reg)dop->userData[0];
+    uint64_t val = [self getCapstoneReg:dreg];
+    if (val == UNDEFINED_STATE){
+        if (!op->flags & OP_CAN_DEFINE){
+            return;
+        }
+        if (op->flags & OP_DEF_SELF && dop->type==sop->type){
+            [self setCapstoneReg:dreg value:0];
+            return;
+        }
+        val = 0;
+    }
+    if (op->flags & OP_UNARY){
+        [self setCapstoneReg:dreg value:op->proc((uint32_t)val, 0)];
+        return;
+    }
+    uint64_t v2=0;
+    if (sop->type & DISASM_OPERAND_CONSTANT_TYPE){
+        v2 = sop->immediateValue;
+    }else if (sop->type & DISASM_OPERAND_REGISTER_TYPE){
+        //reg
+        x86_reg reg = (x86_reg)sop->userData[0];
+        v2 = [self getCapstoneReg:reg];
+    }else{
+        //undefine
+        v2 = UNDEFINED_STATE;
+    }
+    if (v2 == UNDEFINED_STATE){
+        [self setCapstoneReg:dreg value:UNDEFINED_STATE];
+    }else{
+        [self setCapstoneReg:dreg value:op->proc((uint32_t)val, (uint32_t)v2)];
+    }
+}
+
+- (void)setRegInfo:(RegInfo*)info value:(int64_t)value {
     if(!info || !info->statePtr){
-        NSLog(@"Reg %d %d not found.", (int)rclass, (int)reg);
+        NSLog(@"Reg not found.");
         return;
     }
     if (value == UNDEFINED_STATE){
@@ -269,8 +371,16 @@ static RegInfo regs[]={
     memcpy(((uint8_t*)info->statePtr)+ofs, &value, info->size & 0xFF);
 }
 
-- (int64_t)getReg:(NSUInteger)reg ofClass:(RegClass)rclass{
-    RegInfo* info=localRegs[rclass][reg];
+- (void)setCapstoneReg:(x86_reg)reg value:(int64_t)value{
+    [self setRegInfo:capstoneRegs[reg] value:value];
+}
+
+
+- (void)setReg:(NSUInteger)reg ofClass:(RegClass)rclass value:(int64_t)value{
+    [self setRegInfo:localRegs[rclass][reg] value:value];
+}
+
+- (int64_t)getRegInfoValue:(RegInfo*)info {
     if(!info || !info->statePtr || *info->statePtr==UNDEFINED_STATE){
         return UNDEFINED_STATE;
     }
@@ -278,6 +388,23 @@ static RegInfo regs[]={
     int64_t res = 0;
     memcpy(&res, ((uint8_t*)info->statePtr)+ofs, info->size & 0xFF);
     return res;
+}
+
+- (int64_t)getCapstoneReg:(x86_reg)reg {
+    return [self getRegInfoValue:capstoneRegs[reg]];
+}
+
+
+- (int64_t)getReg:(NSUInteger)reg ofClass:(RegClass)rclass{
+    return [self getRegInfoValue:localRegs[rclass][reg]];
+}
+
+- (uint)getCS{
+    return (uint)[self getCapstoneReg:X86_REG_CS];
+}
+
+- (uint)getIP{
+    return (uint)[self getCapstoneReg:X86_REG_EIP];
 }
 
 @end

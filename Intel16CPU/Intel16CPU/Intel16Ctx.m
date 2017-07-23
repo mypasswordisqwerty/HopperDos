@@ -23,7 +23,6 @@
     NSObject<HPDisassembledFile> *_file;
     csh _handle;
     NSArray* intelPtrs;
-    int isComSection;
 }
 
 - (instancetype)initWithCPU:(Intel16CPU *)cpu andFile:(NSObject<HPDisassembledFile> *)file {
@@ -37,10 +36,10 @@
         if (file.userRequestedSyntaxIndex & 1){
             cs_option(_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
         }else{
-            cs_option(_handle, CS_OPT_DETAIL, CS_OPT_SYNTAX_INTEL);
+            cs_option(_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
         }
         intelPtrs = @[@"byte ptr ", @"word ptr ", @"dword ptr "];
-        isComSection = -1;
+        [_cpu setFile:file];
     }
     return self;
 }
@@ -82,7 +81,8 @@
 }
 
 - (BOOL)hasProcedurePrologAt:(Address)address {
-    return NO;
+    uint8_t byte = [_file readUInt8AtVirtualAddress:address];
+    return byte == 0x55;
 }
 
 - (NSUInteger)detectedPaddingLengthAt:(Address)address {
@@ -139,7 +139,7 @@
 
     disasm->instruction.branchType = DISASM_BRANCH_NONE;
     disasm->instruction.addressValue = 0;
-    disasm->instruction.userData = (uintptr_t)insn->id;
+    disasm->instruction.userData = insn->id;
     disasm->instruction.pcRegisterValue = disasm->virtualAddr + insn->size;
 
     int op_index;
@@ -154,6 +154,7 @@
                 break;
 
             case X86_OP_REG:
+                hop_op->userData[0] = op->reg;
                 hop_op->type = DISASM_OPERAND_REGISTER_TYPE;
                 hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK([_cpu capstoneToRegClass:op->reg]);
                 hop_op->type |= DISASM_BUILD_REGISTER_INDEX_MASK([_cpu capstoneToRegIndex:op->reg]);
@@ -299,6 +300,7 @@
     cs_free(insn, count);
 
     [_cpu updateState:disasm];
+
     return len;
 }
 
@@ -311,15 +313,16 @@
 }
 
 - (void)performInstructionSpecificAnalysis:(DisasmStruct *)disasm forProcedure:(NSObject<HPProcedure> *)procedure inSegment:(NSObject<HPSegment> *)segment {
-    
+    NSString* comment = [OpComment commentForOpcode:disasm CPU:_cpu];
+    if (comment){
+        [_file setComment:comment atVirtualAddress:disasm->virtualAddr reason:CCReason_Automatic];
+    }
 }
 
 - (void)performProcedureAnalysis:(NSObject<HPProcedure> *)procedure basicBlock:(NSObject<HPBasicBlock> *)basicBlock disasm:(DisasmStruct *)disasm {
-    
 }
 
 - (void)updateProcedureAnalysis:(DisasmStruct *)disasm {
-    
 }
 
 //Printing
@@ -346,17 +349,8 @@ static inline int regIndexFromType(uint64_t type) {
 
     NSObject<HPASMLine> *line = [services blankASMLine];
     if ((disasm->syntaxIndex & 2) != 0){
-        Address va = disasm->virtualAddr;
-        Address start=[file sectionForVirtualAddress:va].startAddress;
-        if (isComSection==-1){
-            isComSection = [[file sectionForVirtualAddress:va].sectionName isEqualToString:COM_SECTION] ? 1 : 0;
-        }
-        if (start==0x100 && isComSection){
-            start = 0;
-        }
-        [line appendRawString:[NSString stringWithFormat:@"%04X:%04X    ",(uint)start >> 4, (uint)(va-start)]];
+        [line appendRawString:[NSString stringWithFormat:@"%04X:%04X    ",[_cpu getCS], [_cpu getIP]]];
     }
-
     NSString *mnemonic = @(disasm->instruction.mnemonic);
     [line appendMnemonic:mnemonic];
     return line;
@@ -376,6 +370,7 @@ static inline int regIndexFromType(uint64_t type) {
                  ofClass:regCls
                 andIndex:regIdx];
 }
+
 -(void)printRegisterType:(DisasmOperandType)type line:(NSObject<HPASMLine> *)line disasm:(DisasmStruct*)disasm {
     RegClass regCls = regClassFromType(type);
     int regIdx = regIndexFromType(type);
@@ -476,11 +471,6 @@ static inline int regIndexFromType(uint64_t type) {
         if (part == nil) break;
         if (op_index) [line appendRawString:@", "];
         [line append:part];
-    }
-
-    NSString* comment = [OpComment commentForOpcode:disasm CPU:_cpu];
-    if (comment){
-        [line appendComment: comment];
     }
 
     return line;

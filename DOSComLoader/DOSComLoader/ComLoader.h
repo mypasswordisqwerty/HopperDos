@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <Hopper/Hopper.h>
 
-#define COM_SECTION @"com"
+#define COM_SEGMENT @"DOS COM"
 
 @interface ComLoader : NSObject<FileLoader>
 

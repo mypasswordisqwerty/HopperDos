@@ -85,11 +85,9 @@
     NSObject<HPSegment> *segment = [file addSegmentAt:0x100 size:[data length]];
     NSObject<HPSection> *section = [segment addSectionAt:0x100 size:[data length]];
 
-    segment.segmentName = @"CODE";
-    section.sectionName = COM_SECTION;
+    segment.segmentName = COM_SEGMENT;
+    section.sectionName = @"CODE";
     section.containsCode = YES;
-    NSString *comment = [NSString stringWithFormat:@"\n\nDOS COM %@\n\n", segment.segmentName];
-    [file setComment:comment atVirtualAddress:0x100 reason:CCReason_Automatic];
 
     segment.mappedData = data;
     segment.fileOffset = 0;

@@ -11,8 +11,6 @@
 
 @class Intel16CPU;
 
-#define COM_SECTION @"com"
-
 @interface Intel16Ctx : NSObject<CPUContext>
 
 - (instancetype)initWithCPU:(Intel16CPU *)cpu andFile:(NSObject<HPDisassembledFile> *)file;

@@ -12,6 +12,7 @@
 
 @interface OpComment : NSObject
 
+- (instancetype)init;
 +(NSString*)commentForOpcode:(DisasmStruct*)disasm CPU:(Intel16CPU*)cpu;
 
 @end

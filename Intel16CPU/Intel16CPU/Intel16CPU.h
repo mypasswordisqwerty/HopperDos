@@ -11,8 +11,12 @@
 #include <capstone/capstone.h>
 
 typedef NS_ENUM(NSUInteger, GRegs) {
-    AH, AL, BH, BL, CH, CL, DH, DL, AX, BX, CX, DX, BP, SP, SI, DI, IP,
-    EAX, EBX, ECX, EDX, EBP, ESP, ESI, EDI, EIP
+    AH=0, AL, BH, BL, CH, CL, DH, DL, AX, BX, CX, DX, BP, SP, SI, DI,
+    EAX, EBX, ECX, EDX, EBP, ESP, ESI, EDI
+};
+
+typedef NS_ENUM(NSUInteger, SRegs) {
+    IP=0, EIP
 };
 
 #define UNDEFINED_STATE     ((int64_t)-1)
@@ -25,6 +29,7 @@ typedef NS_ENUM(NSUInteger, GRegs) {
 - (RegClass)capstoneToRegClass:(x86_reg)reg;
 - (void)clearState;
 - (void)updateState:(DisasmStruct*)disasm;
-- (int64_t)valueReg:(NSUInteger)reg ofClass:(RegClass)rclass;
+- (void)setReg:(NSUInteger)reg ofClass:(RegClass)rclass value:(int64_t)value;
+- (int64_t)getReg:(NSUInteger)reg ofClass:(RegClass)rclass;
 
 @end

@@ -17,11 +17,11 @@ using namespace std;
 
 struct RegInfo{
     x86_reg capstone;
-    int rid;
+    NSUInteger rid;
     RegClass rclass;
     int64_t *statePtr;
     int size;
-    string name;
+    NSString* name;
 };
 
 static struct CpuState{
@@ -33,52 +33,52 @@ static struct CpuState{
 
 
 static RegInfo regs[]={
-    {X86_REG_EFLAGS, 0, RegClass_CPUState, &_state.EFLAGS, 4, "eflags"},
-    {X86_REG_AL, AL, RegClass_GeneralPurposeRegister, &_state.EAX, 1, "al"},
-    {X86_REG_AH, AH, RegClass_GeneralPurposeRegister, &_state.EAX, 0x101, "ah"},
-    {X86_REG_AX, AX, RegClass_GeneralPurposeRegister, &_state.EAX, 2, "ax"},
-    {X86_REG_EAX, EAX, RegClass_GeneralPurposeRegister, &_state.EAX, 4, "eax"},
-    {X86_REG_BL, BL, RegClass_GeneralPurposeRegister, &_state.EBX, 1, "bl"},
-    {X86_REG_BH, BH, RegClass_GeneralPurposeRegister, &_state.EBX, 0x101, "bh"},
-    {X86_REG_BX, BX, RegClass_GeneralPurposeRegister, &_state.EBX, 2, "bx"},
-    {X86_REG_EBX, EBX, RegClass_GeneralPurposeRegister, &_state.EBX, 4, "ebx"},
-    {X86_REG_CL, CL, RegClass_GeneralPurposeRegister, &_state.ECX, 1, "cl"},
-    {X86_REG_CH, CH, RegClass_GeneralPurposeRegister, &_state.ECX, 0x101, "ch"},
-    {X86_REG_CX, CX, RegClass_GeneralPurposeRegister, &_state.ECX, 2, "cx"},
-    {X86_REG_ECX, ECX, RegClass_GeneralPurposeRegister, &_state.ECX, 4, "ecx"},
-    {X86_REG_DL, DL, RegClass_GeneralPurposeRegister, &_state.EDX, 1, "dl"},
-    {X86_REG_DH, DH, RegClass_GeneralPurposeRegister, &_state.EDX, 0x101, "dh"},
-    {X86_REG_DX, DX, RegClass_GeneralPurposeRegister, &_state.EDX, 2, "dx"},
-    {X86_REG_EDX, EDX, RegClass_GeneralPurposeRegister, &_state.EDX, 4, "edx"},
-    {X86_REG_BP, BP, RegClass_GeneralPurposeRegister, &_state.EBP, 2, "bp"},
-    {X86_REG_EBP, EBP, RegClass_GeneralPurposeRegister, &_state.EBP, 4, "ebp"},
-    {X86_REG_SP, SP, RegClass_GeneralPurposeRegister, &_state.ESP, 2, "sp"},
-    {X86_REG_ESP, ESP, RegClass_GeneralPurposeRegister, &_state.ESP, 4, "esp"},
-    {X86_REG_SI, SI, RegClass_GeneralPurposeRegister, &_state.ESI, 2, "si"},
-    {X86_REG_ESI, ESI, RegClass_GeneralPurposeRegister, &_state.ESI, 4, "esi"},
-    {X86_REG_DI, DI, RegClass_GeneralPurposeRegister, &_state.EDI, 2, "di"},
-    {X86_REG_EDI, EDI, RegClass_GeneralPurposeRegister, &_state.EDI, 4, "edi"},
-    {X86_REG_IP, IP, RegClass_GeneralPurposeRegister, &_state.EIP, 2, "ip"},
-    {X86_REG_EIP, EIP, RegClass_GeneralPurposeRegister, &_state.EIP, 4, "eip"},
-    {X86_REG_CS, DISASM_CS_Reg, RegClass_X86_SEG, &_state.CS, 2, "cs"},
-    {X86_REG_DS, DISASM_DS_Reg, RegClass_X86_SEG, &_state.DS, 2, "ds"},
-    {X86_REG_ES, DISASM_ES_Reg, RegClass_X86_SEG, &_state.ES, 2, "es"},
-    {X86_REG_SS, DISASM_SS_Reg, RegClass_X86_SEG, &_state.SS, 2, "ss"},
-    {X86_REG_FS, DISASM_FS_Reg, RegClass_X86_SEG, &_state.FS, 2, "fs"},
-    {X86_REG_GS, DISASM_GS_Reg, RegClass_X86_SEG, &_state.GS, 2, "gs"},
-    {X86_REG_INVALID, 0, RegClass_X86_SEG, NULL, 2, "invalid"},
+    {X86_REG_EFLAGS, 0, RegClass_CPUState, &_state.EFLAGS, 4, @"eflags"},
+    {X86_REG_AL, AL, RegClass_GeneralPurposeRegister, &_state.EAX, 1, @"al"},
+    {X86_REG_AH, AH, RegClass_GeneralPurposeRegister, &_state.EAX, 0x101, @"ah"},
+    {X86_REG_AX, AX, RegClass_GeneralPurposeRegister, &_state.EAX, 2, @"ax"},
+    {X86_REG_EAX, EAX, RegClass_GeneralPurposeRegister, &_state.EAX, 4, @"eax"},
+    {X86_REG_BL, BL, RegClass_GeneralPurposeRegister, &_state.EBX, 1, @"bl"},
+    {X86_REG_BH, BH, RegClass_GeneralPurposeRegister, &_state.EBX, 0x101, @"bh"},
+    {X86_REG_BX, BX, RegClass_GeneralPurposeRegister, &_state.EBX, 2, @"bs"},
+    {X86_REG_EBX, EBX, RegClass_GeneralPurposeRegister, &_state.EBX, 4, @"ebx"},
+    {X86_REG_CL, CL, RegClass_GeneralPurposeRegister, &_state.ECX, 1, @"cl"},
+    {X86_REG_CH, CH, RegClass_GeneralPurposeRegister, &_state.ECX, 0x101, @"ch"},
+    {X86_REG_CX, CX, RegClass_GeneralPurposeRegister, &_state.ECX, 2, @"cx"},
+    {X86_REG_ECX, ECX, RegClass_GeneralPurposeRegister, &_state.ECX, 4, @"ecx"},
+    {X86_REG_DL, DL, RegClass_GeneralPurposeRegister, &_state.EDX, 1, @"dl"},
+    {X86_REG_DH, DH, RegClass_GeneralPurposeRegister, &_state.EDX, 0x101, @"dh"},
+    {X86_REG_DX, DX, RegClass_GeneralPurposeRegister, &_state.EDX, 2, @"dx"},
+    {X86_REG_EDX, EDX, RegClass_GeneralPurposeRegister, &_state.EDX, 4, @"edx"},
+    {X86_REG_BP, BP, RegClass_GeneralPurposeRegister, &_state.EBP, 2, @"bp"},
+    {X86_REG_EBP, EBP, RegClass_GeneralPurposeRegister, &_state.EBP, 4, @"ebp"},
+    {X86_REG_SP, SP, RegClass_GeneralPurposeRegister, &_state.ESP, 2, @"sp"},
+    {X86_REG_ESP, ESP, RegClass_GeneralPurposeRegister, &_state.ESP, 4, @"esp"},
+    {X86_REG_SI, SI, RegClass_GeneralPurposeRegister, &_state.ESI, 2, @"si"},
+    {X86_REG_ESI, ESI, RegClass_GeneralPurposeRegister, &_state.ESI, 4, @"esi"},
+    {X86_REG_DI, DI, RegClass_GeneralPurposeRegister, &_state.EDI, 2, @"di"},
+    {X86_REG_EDI, EDI, RegClass_GeneralPurposeRegister, &_state.EDI, 4, @"edi"},
+    {X86_REG_IP, IP, RegClass_X86_Special, &_state.EIP, 2, @"ip"},
+    {X86_REG_EIP, EIP, RegClass_X86_Special, &_state.EIP, 4, @"eip"},
+    {X86_REG_CS, DISASM_CS_Reg, RegClass_X86_SEG, &_state.CS, 2, @"cs"},
+    {X86_REG_DS, DISASM_DS_Reg, RegClass_X86_SEG, &_state.DS, 2, @"ds"},
+    {X86_REG_ES, DISASM_ES_Reg, RegClass_X86_SEG, &_state.ES, 2, @"es"},
+    {X86_REG_SS, DISASM_SS_Reg, RegClass_X86_SEG, &_state.SS, 2, @"ss"},
+    {X86_REG_FS, DISASM_FS_Reg, RegClass_X86_SEG, &_state.FS, 2, @"fs"},
+    {X86_REG_GS, DISASM_GS_Reg, RegClass_X86_SEG, &_state.GS, 2, @"gs"},
+    {X86_REG_INVALID, 0, RegClass_X86_SEG, NULL, 2, @"invalid"},
 };
 
 
 
 @implementation Intel16CPU {
     NSObject<HPHopperServices> *_services;
-    map<int,RegInfo*> capstoneRegs;
-    map<int,map<int,RegInfo*>> localRegs;
+    map<x86_reg, RegInfo*> capstoneRegs;
+    map<RegClass, map<NSUInteger, RegInfo*>> localRegs;
 }
 
 - (void)fillRegs {
-    for (auto it: regs){
+    for (RegInfo& it: regs){
         capstoneRegs[it.capstone] = &it;
         localRegs[it.rclass][it.rid] = &it;
         if (it.capstone==X86_REG_INVALID){
@@ -92,7 +92,6 @@ static RegInfo regs[]={
         _services = services;
         [self fillRegs];
         [self clearState];
-        NSLog(@"inited");
     }
     return self;
 }
@@ -176,25 +175,26 @@ static RegInfo regs[]={
 }
 
 - (NSUInteger)registerClassCount {
-    return RegClass_X86_SEG;
+    return RegClass_X86_SEG+1;
 }
 
 - (NSUInteger)registerCountForClass:(RegClass)reg_class {
     switch (reg_class) {
         case RegClass_CPUState: return 1;
-        case RegClass_GeneralPurposeRegister: return EIP+1;
+        case RegClass_GeneralPurposeRegister: return EDI+1;
         case RegClass_X86_SEG: return DISASM_SS_Reg+1;
+        case RegClass_X86_Special: return EIP+1;
         default: break;
     }
     return 0;
 }
 
 - (BOOL)registerIndexIsStackPointer:(NSUInteger)reg ofClass:(RegClass)reg_class {
-    return reg_class == RegClass_GeneralPurposeRegister && reg == SP;
+    return reg_class == RegClass_GeneralPurposeRegister && (reg == SP || reg == ESP);
 }
 
 - (BOOL)registerIndexIsFrameBasePointer:(NSUInteger)reg ofClass:(RegClass)reg_class {
-    return reg_class == RegClass_GeneralPurposeRegister && reg == BP;
+    return reg_class == RegClass_GeneralPurposeRegister && (reg == BP || reg == EBP);
 }
 
 - (BOOL)registerIndexIsProgramCounter:(NSUInteger)reg {
@@ -206,11 +206,8 @@ static RegInfo regs[]={
 }
 
 - (NSString *)registerIndexToString:(NSUInteger)reg ofClass:(RegClass)reg_class withBitSize:(NSUInteger)size position:(DisasmPosition)position andSyntaxIndex:(NSUInteger)syntaxIndex {
-    RegInfo* info = localRegs[reg_class][(int)reg];
-    if (!info){
-        return nil;
-    }
-    return [NSString stringWithCString:info->name.c_str() encoding:NSUTF8StringEncoding];
+    RegInfo* info = localRegs[reg_class][reg];
+    return info ? info->name : nil;
 }
 
 - (NSString *)cpuRegisterStateMaskToString:(uint32_t)cpuState {
@@ -240,6 +237,7 @@ static RegInfo regs[]={
 }
 
 - (NSUInteger)capstoneToRegIndex:(x86_reg)reg {
+    NSLog(@"cap to idx %d %d", (int)reg, (int)capstoneRegs[reg]->rid);
     return capstoneRegs[reg]->rid;
 }
 
@@ -257,13 +255,27 @@ static RegInfo regs[]={
     
 }
 
-- (int64_t)valueReg:(NSUInteger)reg ofClass:(RegClass)rclass{
-    RegInfo* info=localRegs[rclass][(int)reg];
-    if(!info || *info->statePtr==UNDEFINED_STATE){
+- (void)setReg:(NSUInteger)reg ofClass:(RegClass)rclass value:(int64_t)value{
+    RegInfo* info=localRegs[rclass][reg];
+    if(!info || !info->statePtr){
+        NSLog(@"Reg %d %d not found.", (int)rclass, (int)reg);
+        return;
+    }
+    if (value == UNDEFINED_STATE){
+        *info->statePtr = value;
+        return;
+    }
+    int ofs = (info->size >> 8) & 0xFF;
+    memcpy(((uint8_t*)info->statePtr)+ofs, &value, info->size & 0xFF);
+}
+
+- (int64_t)getReg:(NSUInteger)reg ofClass:(RegClass)rclass{
+    RegInfo* info=localRegs[rclass][reg];
+    if(!info || !info->statePtr || *info->statePtr==UNDEFINED_STATE){
         return UNDEFINED_STATE;
     }
-    int ofs = info->size >> 8;
-    int64_t res=0;
+    int ofs = (info->size >> 8) & 0xFF;
+    int64_t res = 0;
     memcpy(&res, ((uint8_t*)info->statePtr)+ofs, info->size & 0xFF);
     return res;
 }

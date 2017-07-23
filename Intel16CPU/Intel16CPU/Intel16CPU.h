@@ -36,4 +36,5 @@ typedef NS_ENUM(NSUInteger, SRegs) {
 - (int64_t)getReg:(NSUInteger)reg ofClass:(RegClass)rclass;
 - (uint)getCS;
 - (uint)getIP;
+- (uint64_t)dataSeg;
 @end

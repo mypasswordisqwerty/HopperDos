@@ -102,6 +102,7 @@ static OpInfo ops[] = {
     map<RegClass, map<NSUInteger, RegInfo*>> localRegs;
     BOOL isComFile;
     map<x86_insn, OpInfo*> procs;
+    uint64_t dataSeg;
 }
 
 - (instancetype)initWithHopperServices:(NSObject<HPHopperServices> *)services {
@@ -131,10 +132,11 @@ static OpInfo ops[] = {
     isComFile = [[[_file firstSegment] segmentName] isEqualToString: COM_SEGMENT];
     [self setCapstoneReg:X86_REG_FS value:UNDEFINED_STATE];
     [self setCapstoneReg:X86_REG_GS value:UNDEFINED_STATE];
-    [self setCapstoneReg:X86_REG_CS value:0];
-    [self setCapstoneReg:X86_REG_DS value:0];
-    [self setCapstoneReg:X86_REG_ES value:0];
-    [self setCapstoneReg:X86_REG_SS value:0];
+    [self setCapstoneReg:X86_REG_SS value:UNDEFINED_STATE];
+    [self setCapstoneReg:X86_REG_CS value:UNDEFINED_STATE];
+    dataSeg = [[_file lastSection] startAddress] >> 4;
+    [self setCapstoneReg:X86_REG_DS value:dataSeg];
+    [self setCapstoneReg:X86_REG_ES value:dataSeg];
 }
 
 - (NSObject<HPHopperServices> *)hopperServices {
@@ -406,5 +408,10 @@ static OpInfo ops[] = {
 - (uint)getIP{
     return (uint)[self getCapstoneReg:X86_REG_EIP];
 }
+
+- (uint64_t)dataSeg{
+    return dataSeg;
+}
+
 
 @end

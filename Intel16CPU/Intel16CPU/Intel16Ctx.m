@@ -164,14 +164,18 @@
             case X86_OP_MEM: {
                 hop_op->type = DISASM_OPERAND_MEMORY_TYPE;
                 hop_op->memory.displacement = (int16_t) op->mem.disp;
+                BOOL dispOnly=YES;
+                DisasmSegmentReg seg = DISASM_DS_Reg;
                 if (op->mem.segment != X86_REG_INVALID){
                     hop_op->segmentReg = (DisasmSegmentReg)[_cpu capstoneToRegIndex:op->mem.segment];
+                    seg = hop_op->segmentReg;
                 }
                 if (op->mem.base!=X86_REG_INVALID){
                     hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(RegClass_GeneralPurposeRegister);
                     uint64_t mask = DISASM_BUILD_REGISTER_INDEX_MASK([_cpu capstoneToRegIndex:op->mem.base]);
                     hop_op->type |= mask;
                     hop_op->memory.baseRegistersMask = mask;
+                    dispOnly = NO;
                 }
                 if (op->mem.index!=X86_REG_INVALID){
                     hop_op->type |= DISASM_BUILD_REGISTER_CLS_MASK(RegClass_GeneralPurposeRegister);
@@ -179,10 +183,18 @@
                     hop_op->type |= mask;
                     hop_op->memory.indexRegistersMask = mask;
                     hop_op->memory.scale = op->mem.scale;
+                    dispOnly = NO;
                 }
 
-                hop_op->size = op->size;
+                if (dispOnly && op->mem.disp){
+                    uint64_t a = [_cpu getReg:seg ofClass:RegClass_X86_SEG];
+                    if (a == UNDEFINED_STATE){
+                        a = [_cpu dataSeg];
+                    }
+                    disasm->instruction.addressValue = (a<<4) + hop_op->memory.displacement;
+                }
 
+                hop_op->size = op->size * 8;
                 break;
             }
 
@@ -349,7 +361,7 @@ static inline int regIndexFromType(uint64_t type) {
 
     NSObject<HPASMLine> *line = [services blankASMLine];
     if ((disasm->syntaxIndex & 2) != 0){
-        [line appendRawString:[NSString stringWithFormat:@"%04X:%04X    ",[_cpu getCS], [_cpu getIP]]];
+        [line appendRawString:[NSString stringWithFormat:@"%04X:%04X    ", [_cpu getCS], [_cpu getIP]]];
     }
     NSString *mnemonic = @(disasm->instruction.mnemonic);
     [line appendMnemonic:mnemonic];

@@ -219,18 +219,20 @@
 
     if (cs_insn_group(_handle, insn, X86_GRP_JUMP) || cs_insn_group(_handle, insn, X86_GRP_CALL)) {
         if (insn->detail->x86.op_count > 0) {
+            disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
             cs_x86_op *firstOperand = &insn->detail->x86.operands[0];
-            if (insn->detail->x86.op_count == 2){
-                cs_x86_op *op = &insn->detail->x86.operands[1];
-                if (firstOperand->type == X86_OP_IMM && op->type == X86_OP_IMM){
-                    firstOperand->imm <<= 4;
-                    firstOperand->imm += op->imm;
-                }
-                disasm->operand[1].type = DISASM_OPERAND_NO_OPERAND;
-            }
             if (firstOperand->type == X86_OP_IMM) {
+                if (insn->detail->x86.op_count == 2){
+                    cs_x86_op *op = &insn->detail->x86.operands[1];
+                    if (firstOperand->type == X86_OP_IMM && op->type == X86_OP_IMM){
+                        firstOperand->imm <<= 4;
+                        firstOperand->imm += op->imm;
+                        firstOperand->size = 32;
+                    }
+                    disasm->operand[1].type = DISASM_OPERAND_NO_OPERAND;
+                    disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ABSOLUTE;
+                }
                 disasm->instruction.addressValue = firstOperand->imm;
-                disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
             }else{
                 disasm->operand[0].type |= DISASM_OPERAND_ABSOLUTE;
             }
@@ -414,7 +416,7 @@ static inline int regIndexFromType(uint64_t type) {
         if (att){
             [line appendRawString:@"$"];
         }
-        [line append:[file formatNumber:operand->immediateValue at:disasm->virtualAddr usingFormat:format andBitSize:16]];
+        [line append:[file formatNumber:operand->immediateValue at:disasm->virtualAddr usingFormat:format andBitSize:operand->size]];
     }
     else if (operand->type & DISASM_OPERAND_REGISTER_TYPE) {
         // Single register

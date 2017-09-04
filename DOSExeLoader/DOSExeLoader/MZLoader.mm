@@ -124,9 +124,6 @@ using namespace std;
         }
         uint8_t* op = (uint8_t*)(bytes + codeofs + (reloc->segment << 4) + reloc->offset - 3);  // check far call/jmp bytes - OP OFFS SEGM
         ushort rval = *(ushort*)(op+3);
-        if (rval==0x172F){
-            NSLog(@"%04X:%04X ofs found w op %02X", reloc->segment, reloc->offset, *op);
-        }
         segs[rval] |= IS_FARJC(*op);
         reloc++;
     }
@@ -140,7 +137,6 @@ using namespace std;
     uint32 max = segs.rbegin()->first << 4;
     uint32 ofs=0;
     for (auto it=segs.begin(); it!=segs.end(); ++it){
-        NSLog(@"seg %04X %d", it->first, it->second);
         map<ushort, bool>::iterator prev;
         if (it == segs.begin()){
             prev = it;

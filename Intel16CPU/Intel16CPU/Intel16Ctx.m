@@ -23,6 +23,7 @@
     NSObject<HPDisassembledFile> *_file;
     csh _handle;
     NSArray* intelPtrs;
+    uint64_t maxAddress;
 }
 
 - (instancetype)initWithCPU:(Intel16CPU *)cpu andFile:(NSObject<HPDisassembledFile> *)file {
@@ -40,6 +41,7 @@
         }
         intelPtrs = @[@"byte ptr ", @"word ptr ", @"dword ptr "];
         [_cpu setFile:file];
+        maxAddress = [[file firstSegment] endAddress];
     }
     return self;
 }
@@ -191,9 +193,7 @@
                     if (a == UNDEFINED_STATE){
                         a = [_cpu dataSeg];
                     }
-                    if (a!=0 && a != UNDEFINED_STATE){
-                        disasm->instruction.addressValue = (a<<4) + hop_op->memory.displacement;
-                    }
+                    disasm->instruction.addressValue = (a<<4) + hop_op->memory.displacement;
                 }
 
                 hop_op->size = op->size * 8;
@@ -534,7 +534,7 @@ static inline int regIndexFromType(uint64_t type) {
 }
 
 - (BOOL)instructionCanBeUsedToExtractDirectMemoryReferences:(DisasmStruct *)disasmStruct {
-    return YES;
+    return NO;
 }
 
 - (BOOL)instructionOnlyLoadsAddress:(DisasmStruct *)disasmStruct {

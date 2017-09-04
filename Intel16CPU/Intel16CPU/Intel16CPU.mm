@@ -142,7 +142,15 @@ static OpInfo ops[] = {
     [self setCapstoneReg:X86_REG_GS value:UNDEFINED_STATE];
     [self setCapstoneReg:X86_REG_SS value:UNDEFINED_STATE];
     [self setCapstoneReg:X86_REG_CS value:UNDEFINED_STATE];
-    dataSeg = [[_file lastSection] startAddress] >> 4;
+    dataSeg = UNDEFINED_STATE;
+    NSObject<HPSegment> *seg = [_file firstSegment];
+    for (int i=0;i<[seg sectionCount];i++){
+        NSObject<HPSection> * sec = [[seg sections] objectAtIndex:i];
+        if (sec.pureDataSection){
+            dataSeg = [sec startAddress] >> 4;
+            break;
+        }
+    }
     [self setCapstoneReg:X86_REG_DS value:dataSeg];
     [self setCapstoneReg:X86_REG_ES value:dataSeg];
 }
@@ -338,6 +346,9 @@ static OpInfo ops[] = {
     }
     OpInfo* op = procs[opId];
     x86_reg dreg =(x86_reg)dop->userData[0];
+    if (dreg==X86_REG_DS){
+        return;
+    }
     uint64_t val = [self getCapstoneReg:dreg];
     if (val == UNDEFINED_STATE){
         if (!op->flags & OP_CAN_DEFINE){

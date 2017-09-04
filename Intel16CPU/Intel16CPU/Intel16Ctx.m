@@ -232,7 +232,7 @@
             int16_t *op16 = (int16_t*)(disasm->bytes+1);
             if (op == 0x9A || op == 0xEA){
                 //ptr16:16
-                disasm->instruction.addressValue = Intel16CPU.hopperCPUop16[0] + (op16[1]<<4);
+                disasm->instruction.addressValue = op16[0] + (op16[1]<<4);
                 disasm->operand[0].size = 32;
                 disasm->operand[1].type = DISASM_OPERAND_NO_OPERAND;
                 break;

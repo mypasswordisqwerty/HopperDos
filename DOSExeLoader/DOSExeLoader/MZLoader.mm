@@ -8,8 +8,19 @@
 
 #import "MZLoader.h"
 #include "mz.h"
-#include <set>
+#include <map>
 using namespace std;
+
+#define FAR_JMP     0xEA
+#define FAR_CALL    0x9A
+#define IS_FARJC(OP)  (OP==FAR_JMP || OP==FAR_CALL)
+#define IRET    0xCF
+#define NRET    0xC3
+#define FRET    0xCB
+#define IS_RET(OP) (OP==IRET || OP==NRET || OP==FRET)
+#define NPRET   0xC2
+#define FPRET   0xCA
+#define IS_PRET(OP) (OP==NPRET || OP==FPRET)
 
 @implementation MZLoader{
     NSObject<HPHopperServices> *_services;
@@ -60,7 +71,7 @@ using namespace std;
 
 // Returns an array of DetectedFileType objects.
 - (NSArray *)detectedTypesForData:(NSData *)data {
-    if ([data length] < 0x1c)
+    if ([data length] < sizeof(MZHeader))
         return @[];
 
     const void *bytes = (const void *)[data bytes];
@@ -102,14 +113,21 @@ using namespace std;
     }
     uint codesz = exesz - codeofs;
 
-    set<ushort> segs;
-    segs.insert(0);
+    map<ushort, bool> segs;
+    segs[0] = false;
+    segs[mz->cs] = true;
 
     MZReloc *reloc = (MZReloc*)(bytes + mz->reloc_table_offset);
     for (int i=0; i<mz->num_relocs; i++){
-        segs.insert(reloc->segment);
-        ushort* rval = (ushort*)(bytes + codeofs + (reloc->segment << 4) + reloc->offset);
-        segs.insert(*rval);
+        if (!segs.count(reloc->segment)){
+            segs[reloc->segment] = false;
+        }
+        uint8_t* op = (uint8_t*)(bytes + codeofs + (reloc->segment << 4) + reloc->offset - 3);  // check far call/jmp bytes - OP OFFS SEGM
+        ushort rval = *(ushort*)(op+3);
+        if (rval==0x172F){
+            NSLog(@"%04X:%04X ofs found w op %02X", reloc->segment, reloc->offset, *op);
+        }
+        segs[rval] |= IS_FARJC(*op);
         reloc++;
     }
 
@@ -119,9 +137,11 @@ using namespace std;
     segment.fileOffset = codeofs;
     segment.fileLength = codesz;
 
-    uint max = (*segs.rbegin()) << 4;
+    uint32 max = segs.rbegin()->first << 4;
+    uint32 ofs=0;
     for (auto it=segs.begin(); it!=segs.end(); ++it){
-        set<ushort>::iterator prev;
+        NSLog(@"seg %04X %d", it->first, it->second);
+        map<ushort, bool>::iterator prev;
         if (it == segs.begin()){
             prev = it;
             continue;
@@ -129,19 +149,36 @@ using namespace std;
 
         uint32 end = 0;
         do{
-            uint start = *prev << 4;
-            end = start==max ? codesz : *it << 4;
+            uint start = (prev->first << 4)+ofs;
+            end = start==max+ofs ? codesz : it->first << 4;
+            //tune seg end to ret opcode
+            if (it->second && prev->second){ // both code sections
+                uint8_t *op = (uint8_t*)(bytes + codeofs + end -3); //3 bytes for stack pop RET
+                for (ofs=0; ofs<2 && !IS_PRET(*op); ++ofs) ++op;
+                if (ofs>1){
+                    for (ofs=0; ofs<16 && !IS_RET(*op) && !IS_PRET(*op); ++ofs) ++op;
+                    if (ofs>15){
+                        //ret not found
+                        ofs=0;
+                    }else if (IS_PRET(*op)){
+                        ofs+=2;
+                    }
+                }
+                end += ofs;
+            }else{
+                ofs=0;
+            }
             size_t sz = end - start;
             NSLog(@"found segment %08X-%08X", start, end);
 
             NSObject<HPSection> *section = [segment addSectionAt:start size:sz];
 
-            if (start!=max){
-                section.sectionName = [NSString stringWithFormat:@"%04X:0000 CODE", *prev];
+            if (prev->second){
+                section.sectionName = [NSString stringWithFormat:@"%04X:%04X CODE", prev->first, start-(prev->first << 4)];
                 section.pureCodeSection = NO;
                 section.containsCode = YES;
             }else{
-                section.sectionName = [NSString stringWithFormat:@"%04X:0000 DATA", *prev];
+                section.sectionName = [NSString stringWithFormat:@"%04X:%04X DATA", prev->first, start-(prev->first << 4)];
                 section.pureDataSection = YES;
                 section.containsCode = NO;
 
@@ -151,7 +188,7 @@ using namespace std;
 
             prev=it;
 
-        }while(end == max);
+        }while(end == max+ofs);
     }
 
 

@@ -35,13 +35,13 @@ static struct CpuState{
     int64_t EAX, EBX, ECX, EDX, EBP, ESP, ESI, EDI, EIP;
     int64_t ES, DS, FS, GS, CS, SS;
     int64_t EFLAGS;
-    vector<int64_t> stack;
+    vector<uint64_t> stack;
 } _state;
 
 struct OpInfo{
     x86_insn insn;
     int flags;
-    function<uint32_t (uint32_t, uint32_t)> proc;
+    function<uint64_t (uint64_t, uint64_t)> proc;
 };
 
 static RegInfo regs[] = {
@@ -82,15 +82,23 @@ static RegInfo regs[] = {
 };
 
 static OpInfo ops[] = {
-    {X86_INS_MOV, OP_CAN_DEFINE, [](uint32_t r,uint32_t v) {return v;}},
-    {X86_INS_XOR, OP_CAN_DEFINE | OP_DEF_SELF, [](uint32_t r,uint32_t v) {return r ^ v;}},
-    {X86_INS_SUB, OP_CAN_DEFINE | OP_DEF_SELF, [](uint32_t r,uint32_t v) {return r - v;}},
-    {X86_INS_ADD, 0, [](uint32_t r,uint32_t v) {return r + v;}},
-    {X86_INS_AND, 0, [](uint32_t r,uint32_t v) {return r & v;}},
-    {X86_INS_OR, 0, [](uint32_t r,uint32_t v) {return r | v;}},
-    {X86_INS_INC, OP_UNARY, [](uint32_t r,uint32_t v) {return r+1;}},
-    {X86_INS_DEC, OP_UNARY, [](uint32_t r,uint32_t v) {return r-1;}},
-    {X86_INS_NOT, OP_UNARY, [](uint32_t r,uint32_t v) {return ~r;}},
+    {X86_INS_MOV, OP_CAN_DEFINE, [](uint64_t r,uint64_t v) {return v;}},
+    {X86_INS_XOR, OP_CAN_DEFINE | OP_DEF_SELF, [](uint64_t r,uint64_t v) {return r ^ v;}},
+    {X86_INS_SUB, OP_CAN_DEFINE | OP_DEF_SELF, [](uint64_t r,uint64_t v) {return r - v;}},
+    {X86_INS_ADD, 0, [](uint64_t r,uint64_t v) {return r + v;}},
+    {X86_INS_AND, 0, [](uint64_t r,uint64_t v) {return r & v;}},
+    {X86_INS_OR, 0, [](uint64_t r,uint64_t v) {return r | v;}},
+    {X86_INS_INC, OP_UNARY, [](uint64_t r,uint64_t v) {return r+1;}},
+    {X86_INS_DEC, OP_UNARY, [](uint64_t r,uint64_t v) {return r-1;}},
+    {X86_INS_NOT, OP_UNARY, [](uint64_t r,uint64_t v) {return ~r;}},
+    {X86_INS_PUSH, OP_UNARY | OP_CAN_DEFINE, [](uint64_t r,uint64_t v) {_state.stack.push_back(r); return r;}},
+    {X86_INS_POP, OP_UNARY | OP_CAN_DEFINE, [](uint64_t r,uint64_t v) {
+        if (_state.stack.size()==0)
+            return (uint64_t)UNDEFINED_STATE;
+        r=_state.stack.back();
+        _state.stack.pop_back();
+        return r;
+    }},
     {X86_INS_INVALID, 0, nullptr},
 };
 
@@ -293,6 +301,8 @@ static OpInfo ops[] = {
     //undefine GP regs
     memset(&_state, 0xFF, 8*sizeof(int64_t));
     _state.stack.clear();
+    [self setCapstoneReg:X86_REG_DS value:dataSeg];
+    [self setCapstoneReg:X86_REG_ES value:dataSeg];
 }
 
 - (void)updateCSIP:(DisasmStruct*)disasm {
@@ -301,8 +311,9 @@ static OpInfo ops[] = {
     if (!isComFile){
         start=[_file sectionForVirtualAddress:va].startAddress;
     }
-    [self setCapstoneReg:X86_REG_CS value:start >> 4];
-    [self setCapstoneReg:X86_REG_EIP value:va-start];
+    uint64_t seg = start >> 4;
+    [self setCapstoneReg:X86_REG_CS value:seg];
+    [self setCapstoneReg:X86_REG_EIP value:va-(seg<<4)];
 }
 
 - (void)updateState:(DisasmStruct*)disasm{
@@ -336,10 +347,9 @@ static OpInfo ops[] = {
             [self setCapstoneReg:dreg value:0];
             return;
         }
-        val = 0;
     }
     if (op->flags & OP_UNARY){
-        [self setCapstoneReg:dreg value:op->proc((uint32_t)val, 0)];
+        [self setCapstoneReg:dreg value:op->proc(val, 0)];
         return;
     }
     uint64_t v2=0;

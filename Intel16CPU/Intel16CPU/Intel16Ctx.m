@@ -81,8 +81,8 @@
 }
 
 - (BOOL)hasProcedurePrologAt:(Address)address {
-    uint8_t byte = [_file readUInt8AtVirtualAddress:address];
-    return byte == 0x55;
+    uint32_t data = [_file readUInt32AtVirtualAddress:address];
+    return (data & 0x00FFFFFF) == 0xEC8B55;
 }
 
 - (NSUInteger)detectedPaddingLengthAt:(Address)address {
@@ -149,7 +149,7 @@
 
         switch (op->type) {
             case X86_OP_IMM:
-                hop_op->type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                hop_op->type = DISASM_OPERAND_CONSTANT_TYPE;
                 hop_op->immediateValue = op->imm;
                 break;
 
@@ -191,7 +191,9 @@
                     if (a == UNDEFINED_STATE){
                         a = [_cpu dataSeg];
                     }
-                    disasm->instruction.addressValue = (a<<4) + hop_op->memory.displacement;
+                    if (a!=0 && a != UNDEFINED_STATE){
+                        disasm->instruction.addressValue = (a<<4) + hop_op->memory.displacement;
+                    }
                 }
 
                 hop_op->size = op->size * 8;
@@ -218,27 +220,34 @@
     // advantage of the various analysis of Hopper.
 
     if (cs_insn_group(_handle, insn, X86_GRP_JUMP) || cs_insn_group(_handle, insn, X86_GRP_CALL)) {
-        if (insn->detail->x86.op_count > 0) {
-            disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
-            cs_x86_op *firstOperand = &insn->detail->x86.operands[0];
-            if (firstOperand->type == X86_OP_IMM) {
-                if (insn->detail->x86.op_count == 2){
-                    cs_x86_op *op = &insn->detail->x86.operands[1];
-                    if (firstOperand->type == X86_OP_IMM && op->type == X86_OP_IMM){
-                        firstOperand->imm <<= 4;
-                        firstOperand->imm += op->imm;
-                        firstOperand->size = 32;
-                    }
-                    disasm->operand[1].type = DISASM_OPERAND_NO_OPERAND;
-                    disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ABSOLUTE;
-                }
-                disasm->instruction.addressValue = firstOperand->imm;
-            }else{
-                disasm->operand[0].type |= DISASM_OPERAND_ABSOLUTE;
-            }
+        disasm->instruction.addressValue = 0;
+        disasm->operand[0].type |= DISASM_OPERAND_ABSOLUTE;
+        do{
+            if (insn->detail->x86.op_count <1)
+                break;
+            if (insn->detail->x86.operands[0].type!=X86_OP_IMM)
+                break;
             disasm->operand[0].isBranchDestination = 1;
-            if (disasm->instruction.addressValue)
-                disasm->operand[0].immediateValue = disasm->instruction.addressValue;
+            uint8_t op = disasm->bytes[0];
+            int16_t *op16 = (int16_t*)(disasm->bytes+1);
+            if (op == 0x9A || op == 0xEA){
+                //ptr16:16
+                disasm->instruction.addressValue = Intel16CPU.hopperCPUop16[0] + (op16[1]<<4);
+                disasm->operand[0].size = 32;
+                disasm->operand[1].type = DISASM_OPERAND_NO_OPERAND;
+                break;
+            }
+            if (op==0xE9 || op == 0xE8){
+                //rel16
+                disasm->instruction.addressValue = disasm->virtualAddr + insn->size + op16[0];
+                break;
+            }
+            //rel 8
+            int8_t *op8 = (int8_t*)disasm->bytes+1;
+            disasm->instruction.addressValue = disasm->virtualAddr + insn->size + op8[0];
+        }while(0);
+        if (disasm->instruction.addressValue){
+            disasm->operand[0].immediateValue = disasm->instruction.addressValue;
         }
 
         if(cs_insn_group(_handle, insn, X86_GRP_CALL)){
@@ -408,13 +417,13 @@ static inline int regIndexFromType(uint64_t type) {
     int regIdx = 0;
 
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {
-        if (disasm->instruction.branchType) {
+        if (att){
+            [line appendRawString:@"$"];
+        }
+        if (disasm->instruction.branchType != DISASM_BRANCH_NONE) {
             FORMAT(Format_Address);
         }else{
             FORMAT(Format_Hexadecimal);
-        }
-        if (att){
-            [line appendRawString:@"$"];
         }
         [line append:[file formatNumber:operand->immediateValue at:disasm->virtualAddr usingFormat:format andBitSize:operand->size]];
     }

@@ -187,6 +187,17 @@ using namespace std;
         }while(end == max+ofs);
     }
 
+    //add stack segment
+    segment = [file addSegmentAt:[data length] size:(mz->ss<<4)+mz->sp - [data length]];
+    segment.segmentName = @"DOS STACK";
+
+/*
+    NSObject<HPSection> *section = [segment addSectionAt:0 size:mz->sp];
+    section.sectionName = [NSString stringWithFormat:@"%04X:%04X STACK", mz->ss, 0];
+    section.pureDataSection = YES;
+    section.containsCode = NO;
+ */
+
 
     file.cpuFamily = @"intel16";
     file.cpuSubFamily = @"8086";

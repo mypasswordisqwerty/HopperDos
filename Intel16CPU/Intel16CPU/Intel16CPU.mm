@@ -346,12 +346,9 @@ static OpInfo ops[] = {
     }
     OpInfo* op = procs[opId];
     x86_reg dreg =(x86_reg)dop->userData[0];
-    if (dreg==X86_REG_DS){
-        return;
-    }
     uint64_t val = [self getCapstoneReg:dreg];
     if (val == UNDEFINED_STATE){
-        if (!op->flags & OP_CAN_DEFINE){
+        if (!(op->flags & OP_CAN_DEFINE)){
             return;
         }
         if (op->flags & OP_DEF_SELF && dop->type==sop->type){

@@ -54,7 +54,7 @@
     return _cpu;
 }
 
-- (void)initDisasmStructure:(DisasmStruct *)disasm withSyntaxIndex:(NSUInteger)syntaxIndex {
+- (void)initDisasmStructure:(DisasmStruct*)disasm withSyntaxIndex:(NSUInteger)syntaxIndex {
     bzero(disasm, sizeof(DisasmStruct));
     disasm->syntaxIndex = _file.userRequestedSyntaxIndex;
 }
@@ -193,7 +193,9 @@
                     if (a == UNDEFINED_STATE){
                         a = [_cpu dataSeg];
                     }
-                    disasm->instruction.addressValue = (a<<4) + hop_op->memory.displacement;
+                    if (a!=UNDEFINED_STATE){
+                        disasm->instruction.addressValue = (a<<4) + hop_op->memory.displacement;
+                    }
                 }
 
                 hop_op->size = op->size * 8;

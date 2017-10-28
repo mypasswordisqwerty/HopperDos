@@ -119,12 +119,15 @@ using namespace std;
 
     MZReloc *reloc = (MZReloc*)(bytes + mz->reloc_table_offset);
     for (int i=0; i<mz->num_relocs; i++){
+        uint ofs = codeofs + (reloc->segment << 4) + reloc->offset;
         if (!segs.count(reloc->segment)){
             segs[reloc->segment] = false;
         }
-        uint8_t* op = (uint8_t*)(bytes + codeofs + (reloc->segment << 4) + reloc->offset - 3);  // check far call/jmp bytes - OP OFFS SEGM
+        uint8_t* op = (uint8_t*)(bytes + ofs - 3);  // check far call/jmp bytes - OP OFFS SEGM
         ushort rval = *(ushort*)(op+3);
-        segs[rval] |= IS_FARJC(*op);
+        if ([data length] > codeofs+(rval << 4)){
+            segs[rval] |= IS_FARJC(*op);
+        }
         reloc++;
     }
 

@@ -469,7 +469,7 @@ static inline int regIndexFromType(uint64_t type) {
             memFilled = true;
         }
         //intel disp
-        if (!att && operand->memory.displacement){
+        if (!att && (operand->memory.displacement || !memFilled) ){
             if (memFilled){
                 [line appendRawString:@"+"];
             }

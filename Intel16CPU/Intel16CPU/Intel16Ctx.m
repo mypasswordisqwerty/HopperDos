@@ -220,8 +220,9 @@
     //
     // You should also fill the "operand" description for every other instruction to take
     // advantage of the various analysis of Hopper.
+    bool loop = (insn->id == X86_INS_LOOP || insn->id == X86_INS_LOOPE || insn->id == X86_INS_LOOPNE);
 
-    if (cs_insn_group(_handle, insn, X86_GRP_JUMP) || cs_insn_group(_handle, insn, X86_GRP_CALL)) {
+    if (loop || cs_insn_group(_handle, insn, X86_GRP_JUMP) || cs_insn_group(_handle, insn, X86_GRP_CALL)) {
         disasm->instruction.addressValue = 0;
         disasm->operand[0].type |= DISASM_OPERAND_ABSOLUTE;
         do{
@@ -275,6 +276,9 @@
                 disasm->instruction.branchType = DISASM_BRANCH_JCXZ;
                 break;
             case X86_INS_JECXZ:
+            case X86_INS_LOOP:
+            case X86_INS_LOOPE:
+            case X86_INS_LOOPNE:
                 disasm->instruction.branchType = DISASM_BRANCH_JECXZ;
                 break;
             case X86_INS_JE:

@@ -33,7 +33,7 @@ using namespace std;
     return self;
 }
 
-- (HopperUUID *)pluginUUID {
+- (nonnull NSObject<HPHopperUUID> *)pluginUUID {
     return [_services UUIDWithString:@"1a56d108-f990-478b-8b0b-f026973a2651"];
 }
 
@@ -60,6 +60,16 @@ using namespace std;
 - (NSString *)pluginVersion {
     return @"0.0.1";
 }
+
+- (nonnull NSString *)commandLineIdentifier {
+    return @"DOSExe";
+}
+
+
++ (int)sdkVersion {
+    return HOPPER_CURRENT_SDK_VERSION;
+}
+
 
 - (CPUEndianess)endianess {
     return CPUEndianess_Little;
@@ -194,12 +204,12 @@ using namespace std;
     segment = [file addSegmentAt:[data length] size:(mz->ss<<4)+mz->sp - [data length]];
     segment.segmentName = @"DOS STACK";
 
-/*
-    NSObject<HPSection> *section = [segment addSectionAt:0 size:mz->sp];
-    section.sectionName = [NSString stringWithFormat:@"%04X:%04X STACK", mz->ss, 0];
-    section.pureDataSection = YES;
-    section.containsCode = NO;
- */
+    /*
+     NSObject<HPSection> *section = [segment addSectionAt:0 size:mz->sp];
+     section.sectionName = [NSString stringWithFormat:@"%04X:%04X STACK", mz->ss, 0];
+     section.pureDataSection = YES;
+     section.containsCode = NO;
+     */
 
 
     file.cpuFamily = @"intel16";
@@ -211,6 +221,16 @@ using namespace std;
 
     return DIS_OK;
 }
+
+- (nullable NSArray<NSObject<HPDetectedFileType> *> *)detectedTypesForData:(nonnull NSData *)data ofFileNamed:(nullable NSString *)filename {
+    return [self detectedTypesForData: data];
+}
+
+
+- (nullable NSData *)extractFromData:(nonnull NSData *)data usingDetectedFileType:(nonnull NSObject<HPDetectedFileType> *)fileType returnAdjustOffset:(nullable uint64_t *)adjustOffset returnAdjustFilename:(NSString *__autoreleasing  _Nullable * _Nullable)newFilename {
+    return nil;
+}
+
 
 
 @end

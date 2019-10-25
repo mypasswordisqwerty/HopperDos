@@ -19,7 +19,7 @@
     return self;
 }
 
-- (HopperUUID *)pluginUUID {
+- (NSObject<HPHopperUUID>*)pluginUUID {
     return [_services UUIDWithString:@"9f8d07d0-b9d4-4a96-8862-392ed8028cd6"];
 }
 
@@ -46,6 +46,16 @@
 - (NSString *)pluginVersion {
     return @"0.0.1";
 }
+
+- (nonnull NSString *)commandLineIdentifier {
+    return @"DOSCom";
+}
+
+
++ (int)sdkVersion {
+    return HOPPER_CURRENT_SDK_VERSION;
+}
+
 
 - (CPUEndianess)endianess {
     return CPUEndianess_Little;
@@ -99,11 +109,21 @@
     file.cpuFamily = @"intel16";
     file.cpuSubFamily = @"8086";
     [file setAddressSpaceWidthInBits:16];
-    
+
     [file addEntryPoint:0x100];
-    
+
     return DIS_OK;
 }
+
+- (nullable NSArray<NSObject<HPDetectedFileType> *> *)detectedTypesForData:(nonnull NSData *)data ofFileNamed:(nullable NSString *)filename {
+    return [self detectedTypesForData: data];
+}
+
+
+- (nullable NSData *)extractFromData:(nonnull NSData *)data usingDetectedFileType:(nonnull NSObject<HPDetectedFileType> *)fileType returnAdjustOffset:(nullable uint64_t *)adjustOffset returnAdjustFilename:(NSString *__autoreleasing  _Nullable * _Nullable)newFilename {
+    return nil;
+}
+
 
 
 @end

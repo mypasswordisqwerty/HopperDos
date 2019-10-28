@@ -163,7 +163,7 @@ static OpInfo ops[] = {
     return [[Intel16Ctx alloc] initWithCPU:self andFile:file];
 }
 
-- (HopperUUID *)pluginUUID {
+- (nonnull NSObject<HPHopperUUID> *)pluginUUID {
     return [_services UUIDWithString:@"9f8d07d0-b9d4-4a96-8862-392ed8028cd6"];
 }
 
@@ -194,6 +194,16 @@ static OpInfo ops[] = {
 - (NSString *)pluginVersion {
     return @"0.0.1";
 }
+
+- (nonnull NSString *)commandLineIdentifier {
+    return @"IA16";
+}
+
+
++ (int)sdkVersion {
+    return HOPPER_CURRENT_SDK_VERSION;
+}
+
 
 - (NSArray *)cpuSubFamiliesForFamily:(NSString *)family {
     if ([family isEqualToString:@"intel16"]) return @[@"8086"];
@@ -294,6 +304,31 @@ static OpInfo ops[] = {
 - (BOOL)canDecompileProceduresForCPUFamily:(NSString *)family andSubFamily:(NSString *)subFamily {
     return NO;
 }
+
+- (nullable NSString *)framePointerRegisterNameForFile:(nonnull NSObject<HPDisassembledFile> *)file cpuMode:(uint8_t)cpuMode {
+    return [self framePointerRegisterNameForFile: file];
+}
+
+
+- (int)integerWidthInBitsForCPUFamily:(nullable NSString *)family andSubFamily:(nullable NSString *)subFamily {
+    return 32;
+}
+
+
+- (BOOL)registerIndexIsFrameBasePointer:(NSUInteger)reg ofClass:(RegClass)reg_class cpuMode:(uint8_t)cpuMode file:(nonnull NSObject<HPDisassembledFile> *)file {
+    return [self registerIndexIsFrameBasePointer: reg ofClass: reg_class];
+}
+
+
+- (BOOL)registerIndexIsProgramCounter:(NSUInteger)reg cpuMode:(uint8_t)cpuMode file:(nonnull NSObject<HPDisassembledFile> *)file {
+    return [self registerIndexIsProgramCounter: reg];
+}
+
+
+- (BOOL)registerIndexIsStackPointer:(NSUInteger)reg ofClass:(RegClass)reg_class cpuMode:(uint8_t)cpuMode file:(nonnull NSObject<HPDisassembledFile> *)file {
+    return [self registerIndexIsStackPointer: reg ofClass: reg_class];
+}
+
 
 - (NSUInteger)capstoneToRegIndex:(x86_reg)reg {
     RegInfo* info = capstoneRegs[reg];

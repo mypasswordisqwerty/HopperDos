@@ -338,7 +338,7 @@
 }
 
 - (void)performBranchesAnalysis:(DisasmStruct *)disasm computingNextAddress:(Address *)next andBranches:(NSMutableArray *)branches forProcedure:(NSObject<HPProcedure> *)procedure basicBlock:(NSObject<HPBasicBlock> *)basicBlock ofSegment:(NSObject<HPSegment> *)segment calledAddresses:(NSMutableArray *)calledAddresses callsites:(NSMutableArray *)callSitesAddresses {
-    
+
 }
 
 - (void)performInstructionSpecificAnalysis:(DisasmStruct *)disasm forProcedure:(NSObject<HPProcedure> *)procedure inSegment:(NSObject<HPSegment> *)segment {
@@ -552,6 +552,21 @@ static inline int regIndexFromType(uint64_t type) {
 - (BOOL)instructionMayBeASwitchStatement:(DisasmStruct *)disasmStruct {
     return NO;
 }
+
+- (uint8_t)cpuModeForNextInstruction:(nonnull DisasmStruct *)disasmStruct {
+    return 0;
+}
+
+
+- (BOOL)instructionConditionsCPUModeAtTargetAddress:(nonnull DisasmStruct *)disasmStruct resultCPUMode:(nonnull uint8_t *)cpuMode {
+    return NO;
+}
+
+
+- (BOOL)instructionManipulatesFloat:(nonnull DisasmStruct *)disasmStruct {
+    return NO;
+}
+
 
 
 
